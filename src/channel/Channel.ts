@@ -22,6 +22,8 @@ import { saveChatHistory, getChatHistory, deleteChatHistory } from "../data/hist
 import { mixin, darken } from "../util/helpers";
 import { User } from "@prisma/client";
 import { heapStats } from "bun:jsc";
+import { deleteSavedChannel, getSavedChannel, saveChannel } from "../data/channel";
+import { forceloadChannel } from "./forceLoad";
 
 interface CachedKickban {
     userId: string;
@@ -56,6 +58,53 @@ export class Channel extends EventEmitter {
     private async deleteChatHistory() {
         try {
             await deleteChatHistory(this.getID());
+        } catch (err) { }
+    }
+
+    private async deleteData() {
+        try {
+            await deleteSavedChannel(this.getID());
+        } catch (err) { }
+    }
+
+    private async save() {
+        this.logger.debug("Saving channel data");
+        try {
+            const info = this.getInfo();
+
+            const data = {
+                id: info._id,
+                settings: JSON.stringify(info.settings),
+                flags: JSON.stringify(this.flags)
+            };
+
+            this.logger.debug("Channel data to save:", data);
+
+            await saveChannel(this.getID(), data);
+        } catch (err) {
+            this.logger.debug("Error saving cannel:", err);
+        }
+    }
+
+    private async load() {
+        this.logger.debug("Loading saved data");
+        try {
+            const data = await getSavedChannel(this.getID());
+            if (data) {
+                try {
+                    this.changeSettings(JSON.parse(data.settings));
+                    this.setFlags(JSON.parse(data.flags));
+                    this.loadChatHistory();
+
+                    if (data.forceload) {
+                        forceloadChannel(this.getID());
+                    }
+
+                    this.logger.debug("Loaded channel data:", data);
+                } catch (err) {
+                    this.logger.debug("Error loading channel data:", err);
+                }
+            }
         } catch (err) { }
     }
 
@@ -121,8 +170,7 @@ export class Channel extends EventEmitter {
         this.bindEventListeners();
 
         ChannelList.add(this);
-        // TODO implement owner_id
-        this.settings.owner_id = owner_id;
+        this.settings.owner_id = this.flags["owner_id"];
 
         this.logger.info("Created");
 
@@ -138,7 +186,8 @@ export class Channel extends EventEmitter {
     private bindEventListeners() {
         if (this.alreadyBound) return;
         this.alreadyBound = true;
-        this.loadChatHistory();
+        this.load();
+        this.save();
         this.logger.info("Loaded chat history");
 
         this.on("update", (self, uuid) => {
@@ -422,6 +471,9 @@ export class Channel extends EventEmitter {
         */
 
         //this.logger.debug("Update from changeSettings");
+        (async () => {
+            await this.save();
+        })();
         this.emit("update", this);
     }
 
@@ -806,6 +858,7 @@ export class Channel extends EventEmitter {
 
         ChannelList.remove(this);
         this.deleteChatHistory();
+        this.deleteData();
         this.logger.info("Destroyed");
     }
 
@@ -1149,6 +1202,16 @@ export class Channel extends EventEmitter {
     }
 
     /**
+     * Set the flags on this channel
+     * @param flags Flags to set
+     **/
+    public setFlags(flags: Record<string, any>) {
+        this.flags = flags;
+        this.save();
+        this.emit("update", this);
+    }
+
+    /**
      * Get the ID of the next lobby, useful if this channel is full and is also a lobby
      * @returns ID of the next lobby in numeric succession
      **/
@@ -1176,6 +1239,9 @@ export class Channel extends EventEmitter {
         }
     }
 
+    /**
+     * Print the amount of memory the server is using in chat
+     **/
     public printMemoryInChat() {
         const mem = heapStats();
         this.sendChatAdmin(`Used: ${(mem.heapSize / 1000 / 1000).toFixed(2)}M / Allocated: ${(mem.heapCapacity / 1000 / 1000).toFixed(2)}M`);

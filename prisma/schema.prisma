@@ -25,3 +25,10 @@ model ChatHistory {
   id       String @id @unique @map("_id")
   messages String @default("[]") // JSON messages
 }
+
+model Channel {
+  id        String @id @unique @map("_id")
+  settings  String @default("{}") // JSON channel settings
+  forceload Boolean @default(false) // Whether the channel is forceloaded
+  flags     String @default("{}") // JSON flags object
+}
