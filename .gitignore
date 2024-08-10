@@ -13,3 +13,12 @@ prisma/*.sqlite
 # JWT token keypair
 mppkey
 mppkey.pub
+
+# Logs
+/logs
+
+# VSCode
+/.vscode
+
+# MacOS
+/.DS_Store
