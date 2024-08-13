@@ -12,6 +12,8 @@ export const t: ServerEventListener<"t"> = {
             if (typeof msg.e !== "number") return;
         }
 
+        socket.gateway.lastPing = Date.now();
+
         // Pong
         socket.sendArray([
             {

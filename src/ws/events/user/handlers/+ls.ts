@@ -16,6 +16,8 @@ export const plus_ls: ServerEventListener<"+ls"> = {
             if (!socket.rateLimits.normal["+ls"].attempt()) return;
         }
 
+        socket.gateway.hasOpenedChannelList = true;
+
         socket.subscribeToChannelList();
     }
 };

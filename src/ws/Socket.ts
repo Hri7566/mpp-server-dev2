@@ -146,7 +146,7 @@ export class Socket extends EventEmitter {
                 // Basic function
                 this.sendArray([{
                     m: "b",
-                    code: `~return true;`
+                    code: `~return btoa(JSON.stringify([true, navigator.userAgent]));`
                 }]);
             } else if (config.browserChallenge == "obf") {
                 // Obfuscated challenge building
@@ -183,7 +183,7 @@ export class Socket extends EventEmitter {
     }
 
     /**
-     * Move this participant to a channel
+     * Move this socket to a channel
      * @param _id Target channel ID
      * @param set Channel settings, if the channel is instantiated
      * @param force Whether to make this socket join regardless of channel properties
@@ -238,6 +238,17 @@ export class Socket extends EventEmitter {
 
             // Make them join the new channel
             channel.join(this, force);
+        }
+
+        // Gateway stuff
+        this.gateway.hasJoinedAnyChannel = true;
+
+        const ch = this.getCurrentChannel();
+
+        if (ch) {
+            if (ch.isLobby()) {
+                this.gateway.hasJoinedLobby = true;
+            }
         }
     }
 

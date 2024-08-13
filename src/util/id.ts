@@ -35,6 +35,9 @@ export function createUserID(ip: string) {
             .update("::ffff:" + ip + env.SALT)
             .digest("hex")
             .substring(0, 24);
+    } else {
+        // Fallback if someone typed random garbage in the config
+        return createID();
     }
 }
 

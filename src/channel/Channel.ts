@@ -68,7 +68,7 @@ export class Channel extends EventEmitter {
     }
 
     private async save() {
-        this.logger.debug("Saving channel data");
+        //this.logger.debug("Saving channel data");
         try {
             const info = this.getInfo();
 
@@ -78,16 +78,16 @@ export class Channel extends EventEmitter {
                 flags: JSON.stringify(this.flags)
             };
 
-            this.logger.debug("Channel data to save:", data);
+            //this.logger.debug("Channel data to save:", data);
 
             await saveChannel(this.getID(), data);
         } catch (err) {
-            this.logger.debug("Error saving cannel:", err);
+            this.logger.warn("Error saving channel data:", err);
         }
     }
 
     private async load() {
-        this.logger.debug("Loading saved data");
+        //this.logger.debug("Loading saved data");
         try {
             const data = await getSavedChannel(this.getID());
             if (data) {
@@ -100,9 +100,11 @@ export class Channel extends EventEmitter {
                         forceloadChannel(this.getID());
                     }
 
-                    this.logger.debug("Loaded channel data:", data);
+                    //this.logger.debug("Loaded channel data:", data);
+
+                    this.emit("update", this);
                 } catch (err) {
-                    this.logger.debug("Error loading channel data:", err);
+                    this.logger.error("Error loading channel data:", err);
                 }
             }
         } catch (err) { }
@@ -125,7 +127,7 @@ export class Channel extends EventEmitter {
     ) {
         super();
 
-        this.logger = new Logger("Channel - " + _id);
+        this.logger = new Logger("Channel - " + _id, "logs/channel");
         this.settings = {};
 
         // Copy default settings
@@ -209,7 +211,13 @@ export class Channel extends EventEmitter {
             }
 
             if (this.ppl.length == 0 && !this.stays) {
-                this.destroy();
+                if (config.channelDestroyTimeout) {
+                    setTimeout(() => {
+                        this.destroy();
+                    }, config.channelDestroyTimeout);
+                } else {
+                    this.destroy();
+                }
             }
         });
 
@@ -246,16 +254,20 @@ export class Channel extends EventEmitter {
                     .replace(/(\p{Mc}{5})\p{Mc}+/gu, "$1")
                     .trim();
 
+                const part = socket.getParticipant() as Participant;
+
                 let outgoing: ClientEvents["a"] = {
                     m: "a",
                     a: msg.message,
                     t: Date.now(),
-                    p: socket.getParticipant() as Participant
+                    p: part
                 };
 
                 this.sendArray([outgoing]);
                 this.chatHistory.push(outgoing);
                 await saveChatHistory(this.getID(), this.chatHistory);
+
+                this.logger.info(`${part._id} ${part.name}: ${outgoing.a}`);
 
                 if (msg.message.startsWith("/")) {
                     this.emit("command", msg, socket);
@@ -373,6 +385,10 @@ export class Channel extends EventEmitter {
                 }
             ]);
         });
+
+        this.on("set owner id", id => {
+            this.setFlag("owner_id", id);
+        });
     }
 
     /**
@@ -450,7 +466,7 @@ export class Channel extends EventEmitter {
 
         // Set the verified settings
         for (const key of Object.keys(validatedSet)) {
-            this.logger.debug(`${key}: ${(validatedSet as any)[key]}`);
+            //this.logger.debug(`${key}: ${(validatedSet as any)[key]}`);
             if ((validatedSet as any)[key] === false) continue;
             (this.settings as any)[key] = (set as any)[key];
         }

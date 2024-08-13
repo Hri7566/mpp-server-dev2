@@ -1,8 +1,14 @@
 /**
  * MPP Server 2
- * for mpp.dev
- * by Hri7566
+ * for https://www.multiplayerpiano.dev/
+ * Written by Hri7566
+ * This code is licensed under the GNU General Public License v3.0.
+ * Please see `./LICENSE` for more information.
  */
+
+/**
+ * Main entry point for the server
+ **/
 
 // There are a lot of unhinged bs comments in this repo
 // Pay no attention to the ones that cuss you out
@@ -11,15 +17,23 @@
 import "./ws/server";
 import { loadForcedStartupChannels } from "./channel/forceLoad";
 import { Logger } from "./util/Logger";
+import { startReadline } from "./util/readline";
+import { startMetricsServer } from "./util/metrics";
 
-// Let's construct an entire object just for one thing to be printed
-// and then keep it in memory for the entirety of runtime
-const logger = new Logger("Main");
-logger.info("Forceloading startup channels...");
-loadForcedStartupChannels();
+// wrapper for some reason
+export function startServer() {
+    // Let's construct an entire object just for one thing to be printed
+    // and then keep it in memory for the entirety of runtime
+    const logger = new Logger("Main");
+    logger.info("Forceloading startup channels...");
+    loadForcedStartupChannels();
 
-// This literally breaks editors and they stick all the imports here instead of at the top
-import "./util/readline";
+    // Break the console
+    startReadline();
 
-// Nevermind we use it twice
-logger.info("Ready");
+    // Nevermind, two things are printed
+    logger.info("Ready");
+}
+
+startServer();
+startMetricsServer();

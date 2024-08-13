@@ -1,8 +1,11 @@
 # Channel config file
 
+# Which channels to keep loaded on startup
 forceLoad:
     - lobby
     - test/awkward
+
+# Default settings for lobbies
 lobbySettings:
     lobby: true
     chat: true
@@ -10,19 +13,35 @@ lobbySettings:
     visible: true
     color: "#73b3cc"
     color2: "#273546"
+
+# Default settings for regular channels
 defaultSettings:
     chat: true
     crownsolo: false
     color: "#3b5054"
     color2: "#001014"
     visible: true
+
+# Regexes to match against channel names to determine whether they are lobbies or not
+# This doesn't affect the `isRealLobby` function, which is used to determine "classic" lobbies
 lobbyRegexes:
     - ^lobby[0-9][0-9]$
     - ^lobby[0-9]$
     - ^lobby$
     - ^lobbyNaN$
     - ^test/.+$
+
+# Backdoor channel ID for bypassing the lobby limit
 lobbyBackdoor: lolwutsecretlobbybackdoor
+
+# Channel ID for where you get sent when you join a channel that is full/you get banned/etc
 fullChannel: test/awkward
+
+# Whether to send the channel limit to the client
 sendLimit: false
+
+# Whether to give the crown to the user who had it when they rejoin
 chownOnRejoin: true
+
+# Time in milliseconds to wait before destroying an empty channel
+channelDestroyTimeout: 1000

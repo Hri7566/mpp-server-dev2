@@ -37,14 +37,15 @@ enableAdminEval: true
 # The token validation scheme. Valid values are "none", "jwt" and "uuid".
 # This server will still validate existing tokens generated with other schemes if not set to "none", mimicking MPP.net's server.
 # This is set to "none" by default because MPP.com does not have a token system.
-tokenAuth: none
+tokenAuth: jwt
 
 # The browser challenge scheme. Valid options are "none", "obf" and "basic".
 # This is to change what is sent in the "b" message.
 # "none" will disable the browser challenge,
 # "obf" will sent an obfuscated function to the client,
 # and "basic" will just send a simple function that expects a boolean.
-browserChallenge: none
+# FIXME Note that "obf" is not implemented yet, and has undefined behavior.
+browserChallenge: basic
 
 # Scheme for generating user IDs.
 # Valid options are "random", "sha256", "mpp" and "uuid".

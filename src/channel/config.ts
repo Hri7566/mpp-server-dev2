@@ -10,6 +10,7 @@ interface ChannelConfig {
     fullChannel: string;
     sendLimit: boolean;
     chownOnRejoin: boolean;
+    channelDestroyTimeout: number;
 }
 
 export const config = loadConfig<ChannelConfig>("config/channels.yml", {
@@ -34,5 +35,6 @@ export const config = loadConfig<ChannelConfig>("config/channels.yml", {
     lobbyBackdoor: "lolwutsecretlobbybackdoor",
     fullChannel: "test/awkward",
     sendLimit: false,
-    chownOnRejoin: true
+    chownOnRejoin: true,
+    channelDestroyTimeout: 1000
 });

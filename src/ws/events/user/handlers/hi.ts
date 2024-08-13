@@ -17,10 +17,20 @@ export const hi: ServerEventListener<"hi"> = {
 
         // Browser challenge
         if (config.browserChallenge == "basic") {
-            if (typeof msg.code !== "boolean") return;
+            try {
+                if (typeof msg.code !== "string") return;
+                const code = atob(msg.code);
+                const arr = JSON.parse(code);
 
-            if (msg.code === true) {
-                socket.gateway.hasCompletedBrowserChallenge = true;
+                if (arr[0] === true) {
+                    socket.gateway.hasCompletedBrowserChallenge = true;
+
+                    if (typeof arr[1] === "string") {
+                        socket.gateway.userAgent = arr[1];
+                    }
+                }
+            } catch (err) {
+                logger.warn("Unable to parse basic browser challenge code:", err);
             }
         } else if (config.browserChallenge == "obf") {
             // TODO
@@ -34,11 +44,14 @@ export const hi: ServerEventListener<"hi"> = {
 
         if (config.tokenAuth !== "none") {
             if (typeof msg.token !== "string") {
+                socket.gateway.hasSentToken = true;
+
                 // Get a saved token
                 token = await getToken(socket.getUserID());
                 if (typeof token !== "string") {
                     // Generate a new one
                     token = await createToken(socket.getUserID(), socket.gateway);
+                    socket.gateway.isTokenValid = true;
 
                     if (typeof token !== "string") {
                         logger.warn(`Unable to generate token for user ${socket.getUserID()}`);
@@ -54,6 +67,7 @@ export const hi: ServerEventListener<"hi"> = {
                     //return;
                 } else {
                     token = msg.token;
+                    socket.gateway.isTokenValid = true;
                 }
             }
         }

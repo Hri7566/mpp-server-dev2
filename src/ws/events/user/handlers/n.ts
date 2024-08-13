@@ -11,6 +11,8 @@ export const n: ServerEventListener<"n"> = {
         if (!Array.isArray(msg.n)) return;
         if (typeof msg.t !== "number") return;
 
+        socket.gateway.hasPlayedPianoBefore = true;
+
         // This should've been here months ago
         const channel = socket.getCurrentChannel();
         if (!channel) return;

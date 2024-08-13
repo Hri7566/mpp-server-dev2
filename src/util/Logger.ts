@@ -1,7 +1,18 @@
 import EventEmitter from "events";
 import { padNum, unimportant } from "./helpers";
+import { join } from "path";
+import { existsSync, mkdirSync, appendFile, writeFile } from "fs";
+import { config } from "./utilConfig";
 
 export const logEvents = new EventEmitter();
+
+const logFolder = "./logs";
+// https://stackoverflow.com/questions/14693701/how-can-i-remove-the-ansi-escape-sequences-from-a-string-in-python
+const logRegex = /\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g;
+
+if (config.enableLogFiles) {
+    if (!existsSync(logFolder)) mkdirSync(logFolder);
+}
 
 /**
  * A logger that doesn't fuck with the readline prompt
@@ -14,7 +25,7 @@ export class Logger {
      * @param method The method from `console` to use
      * @param args The data to print
      **/
-    private static log(method: string, ...args: any[]) {
+    private static log(method: string, logPath: string, ...args: any[]) {
         // Un-fuck the readline prompt
         process.stdout.write("\x1b[2K\r");
 
@@ -33,6 +44,23 @@ export class Logger {
 
         // Emit the log event for remote consoles
         logEvents.emit("log", method, unimportant(this.getDate()), unimportant(this.getHHMMSSMS()), args);
+
+        if (config.enableLogFiles) {
+            // Write to file
+            (async () => {
+                const orig = unimportant(this.getDate()) + " " + unimportant(this.getHHMMSSMS()) + " " + args.join(" ") + "\n"
+                const text = orig.replace(logRegex, "");
+                if (!existsSync(logPath)) {
+                    writeFile(logPath, text, (err) => {
+                        if (err) console.error(err);
+                    });
+                } else {
+                    appendFile(logPath, text, (err) => {
+                        if (err) console.error(err);
+                    });
+                }
+            })();
+        }
     }
 
     /**
@@ -62,14 +90,19 @@ export class Logger {
         return new Date().toISOString().split("T")[0];
     }
 
-    constructor(public id: string) { }
+    public logPath: string;
+
+    constructor(public id: string, logdir: string = logFolder) {
+        if (!existsSync(logdir)) mkdirSync(logdir);
+        this.logPath = join(logdir, `${encodeURIComponent(this.id)}.log`);
+    }
 
     /**
      * Print an info message
      * @param args The data to print
      **/
     public info(...args: any[]) {
-        Logger.log("log", `[${this.id}]`, `\x1b[34m[info]\x1b[0m`, ...args);
+        Logger.log("log", this.logPath, `[${this.id}]`, `\x1b[34m[info]\x1b[0m`, ...args);
     }
 
     /**
@@ -77,7 +110,7 @@ export class Logger {
      * @param args The data to print
      **/
     public error(...args: any[]) {
-        Logger.log("error", `[${this.id}]`, `\x1b[31m[error]\x1b[0m`, ...args);
+        Logger.log("error", this.logPath, `[${this.id}]`, `\x1b[31m[error]\x1b[0m`, ...args);
     }
 
     /**
@@ -85,7 +118,7 @@ export class Logger {
      * @param args The data to print
      **/
     public warn(...args: any[]) {
-        Logger.log("warn", `[${this.id}]`, `\x1b[33m[warn]\x1b[0m`, ...args);
+        Logger.log("warn", this.logPath, `[${this.id}]`, `\x1b[33m[warn]\x1b[0m`, ...args);
     }
 
     /**
@@ -93,6 +126,6 @@ export class Logger {
      * @param args The data to print
      **/
     public debug(...args: any[]) {
-        Logger.log("debug", `[${this.id}]`, `\x1b[32m[debug]\x1b[0m`, ...args);
+        Logger.log("debug", this.logPath, `[${this.id}]`, `\x1b[32m[debug]\x1b[0m`, ...args);
     }
 }

@@ -66,9 +66,6 @@ This has always been the future intention of this project.
 
 ## TODO
 
-- Fully implement and test tags
-    - Tags are sent to clients now
-    - Check if tags are sent to everyone
 - Channel data saving
 - Permission groups and permissions
     - Probable permission groups: owner, admin, mod, trialmod, default
@@ -104,6 +101,12 @@ This has always been the future intention of this project.
     - Check for different messages?
     - Check for URL?
     - Notifications for server-generated XSS?
+- Migrate to PostgreSQL instead of SQLite
+     - Likely a low priority, we use prisma anyway, but it would be nice to have a server
+- Implement user caching
+    - Skip redis due to the infamous licensing issues
+    - Probably use a simple in-memory cache
+    - Likely store with leveldb or JSON
 
 ## How to run
 

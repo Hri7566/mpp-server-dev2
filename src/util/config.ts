@@ -1,6 +1,5 @@
 import { existsSync, readFileSync, writeFileSync } from "fs";
 import { parse, stringify } from "yaml";
-import { z } from "zod";
 
 /**
  * This file uses the synchronous functions from the fs
@@ -63,6 +62,7 @@ export function loadConfig<T>(configPath: string, defaultConfig: T): T {
         return config as T;
     } else {
         // Write default config to disk and use that
+        //logger.warn(`Config file "${configPath}" not found, writing default config to disk`);
         writeConfig(configPath, defaultConfig);
         return defaultConfig as T;
     }

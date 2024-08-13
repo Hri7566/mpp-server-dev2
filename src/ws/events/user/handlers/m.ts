@@ -13,11 +13,21 @@ export const m: ServerEventListener<"m"> = {
         let x = msg.x;
         let y = msg.y;
 
-        // Make it numbers
-        if (typeof msg.x == "string") x = parseFloat(msg.x);
-        if (typeof msg.y == "string") y = parseFloat(msg.y);
+        // Parse cursor position if it's strings
+        if (typeof msg.x == "string") {
+            x = parseFloat(msg.x);
+        } else {
+            socket.gateway.isCursorNotString = true;
+        }
 
-        // Move the laggy piece of shit
+        if (typeof msg.y == "string") {
+            y = parseFloat(msg.y);
+        } else {
+            socket.gateway.isCursorNotString = true;
+        }
+
+        // Relocate the laggy microscopic speck
         socket.setCursorPos(x, y);
+        socket.gateway.hasCursorMoved = true;
     }
 };
