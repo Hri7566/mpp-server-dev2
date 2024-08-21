@@ -17,6 +17,7 @@
 import "./ws/server";
 import { loadForcedStartupChannels } from "./channel/forceLoad";
 import { Logger } from "./util/Logger";
+// docker hates this next one
 import { startReadline } from "./util/readline";
 import { startMetricsServer } from "./util/metrics";
 
