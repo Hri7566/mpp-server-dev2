@@ -842,15 +842,17 @@ export class Channel extends EventEmitter {
         let sentSocketIDs = new Array<string>();
 
         for (const p of this.ppl) {
-            socketLoop: for (const socket of socketsBySocketID.values()) {
-                if (socket.isDestroyed()) continue socketLoop;
-                if (!socket.socketID) continue socketLoop;
-                if (socket.getParticipantID() != p.id) continue socketLoop;
-                if (socket.getParticipantID() == part.id) continue socketLoop;
-                if (sentSocketIDs.includes(socket.socketID))
-                    continue socketLoop;
-                socket.sendArray([clientMsg]);
-                sentSocketIDs.push(socket.socketID);
+            socketLoop: for (const sock of socketsBySocketID.values()) {
+                this.logger.debug(`Socket ${sock.getUUID()}`);
+                if (sock.isDestroyed()) continue socketLoop;
+                if (!sock.socketID) continue socketLoop;
+                if (sock.getUUID() == socket.getUUID()) continue socketLoop;
+                if (sock.getParticipantID() != p.id) continue socketLoop;
+                //if (socket.getParticipantID() == part.id) continue socketLoop;
+                if (sentSocketIDs.includes(sock.socketID)) continue socketLoop;
+
+                sock.sendArray([clientMsg]);
+                sentSocketIDs.push(sock.socketID);
             }
         }
     }

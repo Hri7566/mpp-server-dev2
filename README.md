@@ -66,6 +66,7 @@ This has always been the future intention of this project.
 
 ## TODO
 
+- Change `socketsBySocketID` to `socketsByUUID`
 - Channel data saving
 - Permission groups and permissions
     - Probable permission groups: owner, admin, mod, trialmod, default
