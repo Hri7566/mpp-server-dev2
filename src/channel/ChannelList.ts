@@ -48,6 +48,14 @@ export class ChannelList {
         return this.list;
     }
 
+    public static getChannel(_id: string) {
+        return this.list.find(ch => ch.getID() === _id);
+    }
+
+    public static getChannelFuzzy(text: string) {
+        return this.list.find(ch => ch.getID().toLowerCase() == text.toLowerCase());
+    }
+
     public static getPublicList() {
         return this.list.filter(ch => ch.getSetting("visible") == true);
     }
