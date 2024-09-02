@@ -527,7 +527,7 @@ export class Channel extends EventEmitter {
                     if (chid == config.fullChannel) {
                         const banTime = this.getBanTime(socket.getUserID());
 
-                        this.logger.debug("Ban time:", banTime);
+                        //this.logger.debug("Ban time:", banTime);
 
                         if (banTime) {
                             const minutes = Math.floor((banTime.endTime - banTime.startTime) / 1000 / 60);
@@ -827,26 +827,34 @@ export class Channel extends EventEmitter {
      * @param socket Socket that is sending notes
      * @returns undefined
      */
-    public playNotes(msg: ServerEvents["n"], socket: Socket) {
+    public playNotes(msg: ServerEvents["n"], socket?: Socket) {
         if (this.isDestroyed()) return;
-        const part = socket.getParticipant();
-        if (!part) return;
+        let pianoPartID = usersConfig.adminParticipant.id;
+
+        if (socket) {
+            const part = socket.getParticipant();
+            if (!part) return;
+            pianoPartID = part.id;
+        }
 
         let clientMsg: ClientEvents["n"] = {
             m: "n",
             n: msg.n,
             t: msg.t,
-            p: part.id
+            p: pianoPartID
         };
 
         let sentSocketIDs = new Array<string>();
 
         for (const p of this.ppl) {
             socketLoop: for (const sock of socketsBySocketID.values()) {
-                this.logger.debug(`Socket ${sock.getUUID()}`);
                 if (sock.isDestroyed()) continue socketLoop;
                 if (!sock.socketID) continue socketLoop;
-                if (sock.getUUID() == socket.getUUID()) continue socketLoop;
+
+                if (socket) {
+                    if (sock.getUUID() == socket.getUUID()) continue socketLoop;
+                }
+
                 if (sock.getParticipantID() != p.id) continue socketLoop;
                 //if (socket.getParticipantID() == part.id) continue socketLoop;
                 if (sentSocketIDs.includes(sock.socketID)) continue socketLoop;
