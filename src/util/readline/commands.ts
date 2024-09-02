@@ -111,9 +111,12 @@ Command.addCommand(
 
             return bytes;
         }
+
+        const argcat = msg.args.slice(1).join(" ");
+
         if (msg.args.length > 1) {
             try {
-                const output = eval(msg.args[1]);
+                const output = eval(argcat);
                 return output;
             } catch (err) {
                 return err;
