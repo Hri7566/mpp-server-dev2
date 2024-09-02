@@ -10,6 +10,8 @@ maxDuration: 60000
 # The default duration of a notification in milliseconds, if not specified.
 defaultDuration: 7000
 
-# The target used to send notifications to every socket on the server.
+# The target ID to use to send notifications to every socket on the server.
 # This is not used for the "target" parameter, instead this is for "targetChannel"/"targetUser".
+# This will allow notifications to be sent to every socket on the server.
+# This is configurable because it's potentially dangerous to allow every 
 allTarget: all

@@ -19,7 +19,6 @@ import { loadForcedStartupChannels } from "./channel/forceLoad";
 import { Logger } from "./util/Logger";
 // docker hates this next one
 import { startReadline } from "./util/readline";
-import { startMetricsServer } from "./util/metrics";
 
 // wrapper for some reason
 export function startServer() {
@@ -37,4 +36,3 @@ export function startServer() {
 }
 
 startServer();
-startMetricsServer();
