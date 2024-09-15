@@ -1,5 +1,5 @@
-import { loadConfig } from "../util/config";
-import { Participant, UserFlags } from "../util/types";
+import { ConfigManager } from "../util/config";
+import type { Participant, UserFlags } from "../util/types";
 
 export interface UsersConfig {
     defaultName: string;
@@ -45,7 +45,7 @@ export const defaultUsersConfig: UsersConfig = {
 // Not dealing with it. The code somehow runs, and I'm not
 // going to fuck with the order of loading things until bun
 // pushes an update and fucks all this stuff up.
-export const config = loadConfig<UsersConfig>(
+export const config = ConfigManager.loadConfig<UsersConfig>(
     usersConfigPath,
     defaultUsersConfig
 );

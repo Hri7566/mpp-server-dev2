@@ -1,6 +1,14 @@
+import { getRoles, giveRole, removeRole } from "~/data/role";
 import { ChannelList } from "../../channel/ChannelList";
 import { deleteUser, getUsers } from "../../data/user";
 import Command from "./Command";
+import {
+    addRolePermission,
+    getRolePermissions,
+    loadDefaultPermissions,
+    removeAllRolePermissions,
+    removeRolePermission
+} from "~/data/permission";
 
 Command.addCommand(
     new Command(["help", "h", "commands", "cmds"], "help", msg => {
@@ -77,6 +85,63 @@ Command.addCommand(
 );
 
 Command.addCommand(
+    new Command(
+        ["role"],
+        "role <add, remove, list> <user id> [role id]",
+        async msg => {
+            if (!msg.args[2])
+                return "role <add, remove, list> <user id> [role id]";
+
+            if (msg.args[1] === "add") {
+                if (!msg.args[3]) return "No role id provided";
+                await giveRole(msg.args[2], msg.args[3]);
+                return `Gave user ${msg.args[2]} role ${msg.args[3]}`;
+            } else if (msg.args[1] === "remove") {
+                if (!msg.args[3]) return "No role id provided";
+                await removeRole(msg.args[2], msg.args[3]);
+                return `Removed role ${msg.args[3]} from ${msg.args[2]}`;
+            } else if (msg.args[1] === "list") {
+                const roles = await getRoles(msg.args[2]);
+                return `Roles of ${msg.args[2]}: ${roles
+                    .map(r => r.roleId)
+                    .join(", ")}`;
+            }
+        }
+    )
+);
+
+Command.addCommand(
+    new Command(
+        ["perms"],
+        "perms <add, remove, list, clear> [role id] [permission]",
+        async msg => {
+            if (msg.args[1] === "add") {
+                if (!msg.args[3]) return "No permission provided";
+                await addRolePermission(msg.args[2], msg.args[3]);
+                return `Added permission ${msg.args[3]} to role ${msg.args[2]}`;
+            } else if (msg.args[1] === "remove") {
+                if (!msg.args[3]) return "No role id provided";
+                await removeRolePermission(msg.args[2], msg.args[3]);
+                return `Remove permission ${msg.args[3]} from role ${msg.args[2]}`;
+            } else if (msg.args[1] === "list") {
+                const perms = await getRolePermissions(msg.args[2]);
+                return `Permissions of ${msg.args[1]}: ${perms
+                    .map(p => p.permission)
+                    .join(", ")}`;
+            } else if (msg.args[1] === "clear") {
+                await removeAllRolePermissions(msg.args[2]);
+                if (msg.args[2]) {
+                    return `Permissions of ${msg.args[2]} cleared`;
+                } else {
+                    await loadDefaultPermissions();
+                    return `All permissions reset`;
+                }
+            }
+        }
+    )
+);
+
+Command.addCommand(
     new Command(["js", "eval"], "js <code>", async msg => {
         function roughSizeOfObject(object: any) {
             const objectList: any[] = [];
@@ -87,16 +152,16 @@ Command.addCommand(
                 const value = stack.pop();
 
                 switch (typeof value) {
-                    case 'boolean':
+                    case "boolean":
                         bytes += 4;
                         break;
-                    case 'string':
+                    case "string":
                         bytes += value.length * 2;
                         break;
-                    case 'number':
+                    case "number":
                         bytes += 8;
                         break;
-                    case 'object':
+                    case "object":
                         if (!objectList.includes(value)) {
                             objectList.push(value);
                             for (const prop in value) {

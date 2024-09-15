@@ -1,0 +1,9 @@
+admin:
+    - clearChat
+    - vanish
+    - chsetAnywhere
+    - chownAnywhere
+    - usersetOthers
+    - siteBan
+    - siteBanAnyReason
+    - siteBanAnyDuration

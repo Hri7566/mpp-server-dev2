@@ -1,6 +1,6 @@
 import EventEmitter from "events";
 import { Logger } from "../util/Logger";
-import {
+import type {
     ChannelSettingValue,
     IChannelSettings,
     ClientEvents,
@@ -10,19 +10,28 @@ import {
     Notification,
     UserFlags,
     Tag,
+    ChannelFlags as TChannelFlags
 } from "../util/types";
 import type { Socket } from "../ws/Socket";
 import { validateChannelSettings } from "./settings";
-import { findSocketByPartID, socketsBySocketID } from "../ws/Socket";
+import { findSocketByPartID, socketsByUUID } from "../ws/Socket";
 import Crown from "./Crown";
 import { ChannelList } from "./ChannelList";
 import { config } from "./config";
 import { config as usersConfig } from "../ws/usersConfig";
-import { saveChatHistory, getChatHistory, deleteChatHistory } from "../data/history";
-import { mixin, darken } from "../util/helpers";
-import { User } from "@prisma/client";
+import {
+    saveChatHistory,
+    getChatHistory,
+    deleteChatHistory
+} from "../data/history";
+import { mixin, darken, spoop_text } from "../util/helpers";
+import type { User } from "@prisma/client";
 import { heapStats } from "bun:jsc";
-import { deleteSavedChannel, getSavedChannel, saveChannel } from "../data/channel";
+import {
+    deleteSavedChannel,
+    getSavedChannel,
+    saveChannel
+} from "../data/channel";
 import { forceloadChannel } from "./forceLoad";
 
 interface CachedKickban {
@@ -31,9 +40,15 @@ interface CachedKickban {
     endTime: number;
 }
 
+interface CachedCursor {
+    x: string | number;
+    y: string | number;
+    id: string;
+}
+
 interface ExtraPartData {
     uuids: string[];
-    flags: Partial<UserFlags>;
+    flags: UserFlags;
 }
 
 type ExtraPart = Participant & ExtraPartData;
@@ -48,23 +63,25 @@ export class Channel extends EventEmitter {
         try {
             this.chatHistory = await getChatHistory(this.getID());
 
-            this.sendArray([{
-                m: "c",
-                c: this.chatHistory
-            }]);
-        } catch (err) { }
+            this.sendArray([
+                {
+                    m: "c",
+                    c: this.chatHistory
+                }
+            ]);
+        } catch (err) {}
     }
 
     private async deleteChatHistory() {
         try {
             await deleteChatHistory(this.getID());
-        } catch (err) { }
+        } catch (err) {}
     }
 
     private async deleteData() {
         try {
             await deleteSavedChannel(this.getID());
-        } catch (err) { }
+        } catch (err) {}
     }
 
     private async save() {
@@ -107,27 +124,27 @@ export class Channel extends EventEmitter {
                     this.logger.error("Error loading channel data:", err);
                 }
             }
-        } catch (err) { }
+        } catch (err) {}
     }
 
     public logger: Logger;
     public bans = new Array<CachedKickban>();
-    public cursorCache = new Array<{ x: string | number; y: string | number; id: string }>();
+    public cursorCache = new Array<CachedCursor>();
 
     public crown?: Crown;
 
-    private flags: Record<string, any> = {};
+    private flags: TChannelFlags = {};
 
     constructor(
         private _id: string,
         set?: Partial<IChannelSettings>,
         creator?: Socket,
         owner_id?: string,
-        public stays: boolean = false
+        public stays = false
     ) {
         super();
 
-        this.logger = new Logger("Channel - " + _id, "logs/channel");
+        this.logger = new Logger(`Channel - ${_id}`, "logs/channel");
         this.settings = {};
 
         // Copy default settings
@@ -138,8 +155,8 @@ export class Channel extends EventEmitter {
                 // Copied from changeSettings below
                 // TODO do these cases need to be here? can this be determined another way?
                 if (
-                    typeof set.color == "string" &&
-                    (typeof set.color2 == "undefined" ||
+                    typeof set.color === "string" &&
+                    (typeof set.color2 === "undefined" ||
                         set.color2 === this.settings.color2)
                 ) {
                     //this.logger.debug("color 2 darken triggered");
@@ -152,8 +169,8 @@ export class Channel extends EventEmitter {
                 // Set the verified settings
                 for (const key of Object.keys(validatedSet)) {
                     //this.logger.debug(`${key}: ${(validatedSet as any)[key]}`);
-                    if ((validatedSet as any)[key] === false) continue;
-                    (this.settings as any)[key] = (set as any)[key];
+                    if (validatedSet[key] === false) continue;
+                    this.settings[key] = set[key];
                 }
             }
 
@@ -172,11 +189,13 @@ export class Channel extends EventEmitter {
         this.bindEventListeners();
 
         ChannelList.add(this);
-        this.settings.owner_id = this.flags["owner_id"];
+        if (this.flags.owner_id) {
+            this.settings.owner_id = this.flags.owner_id;
+        }
 
         this.logger.info("Created");
 
-        if (this.getID() == "test/mem") {
+        if (this.getID() === "test/mem") {
             setInterval(() => {
                 this.printMemoryInChat();
             }, 1000);
@@ -194,7 +213,7 @@ export class Channel extends EventEmitter {
 
         this.on("update", (self, uuid) => {
             // Send updated info
-            for (const socket of socketsBySocketID.values()) {
+            for (const socket of socketsByUUID.values()) {
                 for (const p of this.ppl) {
                     const socketUUID = socket.getUUID();
 
@@ -210,7 +229,7 @@ export class Channel extends EventEmitter {
                 }
             }
 
-            if (this.ppl.length == 0 && !this.stays) {
+            if (this.ppl.length === 0 && !this.stays) {
                 if (config.channelDestroyTimeout) {
                     setTimeout(() => {
                         this.destroy();
@@ -221,10 +240,7 @@ export class Channel extends EventEmitter {
             }
         });
 
-        const BANNED_WORDS = [
-            "AMIGHTYWIND",
-            "CHECKLYHQ"
-        ];
+        const BANNED_WORDS = ["AMIGHTYWIND", "CHECKLYHQ"];
 
         this.on("a", async (msg: ServerEvents["a"], socket: Socket) => {
             try {
@@ -233,7 +249,13 @@ export class Channel extends EventEmitter {
                 const userFlags = socket.getUserFlags();
 
                 if (userFlags) {
-                    if (userFlags.cant_chat) return;
+                    if (userFlags.cant_chat == 1) return;
+                    if (userFlags.chat_curse_1 == 1)
+                        msg.message = msg.message
+                            .replace(/[aeiu]/g, "o")
+                            .replace(/[AEIU]/g, "O");
+                    if (userFlags.chat_curse_2 == 1)
+                        msg.message = spoop_text(msg.message);
                 }
 
                 if (!this.settings.chat) return;
@@ -241,7 +263,13 @@ export class Channel extends EventEmitter {
                 if (msg.message.length > 512) return;
 
                 for (const word of BANNED_WORDS) {
-                    if (msg.message.toLowerCase().split(" ").join("").includes(word.toLowerCase())) {
+                    if (
+                        msg.message
+                            .toLowerCase()
+                            .split(" ")
+                            .join("")
+                            .includes(word.toLowerCase())
+                    ) {
                         return;
                     }
                 }
@@ -256,7 +284,7 @@ export class Channel extends EventEmitter {
 
                 const part = socket.getParticipant() as Participant;
 
-                let outgoing: ClientEvents["a"] = {
+                const outgoing: ClientEvents["a"] = {
                     m: "a",
                     a: msg.message,
                     t: Date.now(),
@@ -274,7 +302,9 @@ export class Channel extends EventEmitter {
                 }
             } catch (err) {
                 this.logger.error(err);
-                this.logger.warn("Error whilst processing a chat message from user " + socket.getUserID());
+                this.logger.warn(
+                    `Error whilst processing a chat message from user ${socket.getUserID()}`
+                );
             }
         });
 
@@ -283,8 +313,8 @@ export class Channel extends EventEmitter {
             const cmd = args[0].substring(1);
             const ownsChannel = this.hasUser(socket.getUserID());
 
-            if (cmd == "help") {
-            } else if (cmd == "mem") {
+            if (cmd === "help") {
+            } else if (cmd === "mem") {
                 this.printMemoryInChat();
             }
         });
@@ -294,19 +324,27 @@ export class Channel extends EventEmitter {
                 if (typeof user.name !== "string") return;
                 if (typeof user.color !== "string") return;
                 if (typeof user.id !== "string") return;
-                if (typeof user.tag !== "undefined" && typeof user.tag !== "string") return;
-                if (typeof user.flags !== "undefined" && typeof user.flags !== "string") return;
+                if (
+                    typeof user.tag !== "undefined" &&
+                    typeof user.tag !== "string"
+                )
+                    return;
+                if (
+                    typeof user.flags !== "undefined" &&
+                    typeof user.flags !== "string"
+                )
+                    return;
 
-                let tag;
-                let flags;
+                let tag: Tag | undefined;
+                let flags: UserFlags | undefined;
 
                 try {
                     tag = JSON.parse(user.tag);
-                } catch (err) { }
+                } catch (err) {}
 
                 try {
-                    flags = JSON.parse(user.flags);
-                } catch (err) { }
+                    flags = JSON.parse(user.flags) as UserFlags;
+                } catch (err) {}
 
                 for (const p of this.ppl) {
                     if (p._id !== user.id) continue;
@@ -315,13 +353,15 @@ export class Channel extends EventEmitter {
                     p.name = user.name;
                     p.color = user.color;
                     p.tag = tag;
-                    p.flags = flags;
+                    if (flags) p.flags = flags;
 
-                    let found;
+                    let found:
+                        | { x: string | number; y: string | number; id: string }
+                        | undefined;
 
                     for (const cursor of this.cursorCache) {
-                        if (cursor.id == p.id) {
-                            found = cursor
+                        if (cursor.id === p.id) {
+                            found = cursor;
                         }
                     }
 
@@ -333,20 +373,18 @@ export class Channel extends EventEmitter {
                         y = found.y;
                     }
 
-                    this.sendArray(
-                        [
-                            {
-                                m: "p",
-                                _id: p._id,
-                                name: p.name,
-                                color: p.color,
-                                id: p.id,
-                                x: x,
-                                y: y,
-                                tag: usersConfig.enableTags ? p.tag : undefined
-                            }
-                        ]
-                    );
+                    this.sendArray([
+                        {
+                            m: "p",
+                            _id: p._id,
+                            name: p.name,
+                            color: p.color,
+                            id: p.id,
+                            x: x,
+                            y: y,
+                            tag: usersConfig.enableTags ? p.tag : undefined
+                        }
+                    ]);
                 }
 
                 //this.logger.debug("Update from user data update handler");
@@ -357,11 +395,11 @@ export class Channel extends EventEmitter {
             }
         });
 
-        this.on("cursor", (pos: { x: string | number; y: string | number; id: string }) => {
-            let found;
+        this.on("cursor", (pos: CachedCursor) => {
+            let found: CachedCursor | undefined;
 
             for (const cursor of this.cursorCache) {
-                if (cursor.id == pos.id) {
+                if (cursor.id === pos.id) {
                     found = cursor;
                 }
             }
@@ -379,9 +417,8 @@ export class Channel extends EventEmitter {
                 {
                     m: "m",
                     id: pos.id,
-                    // not type safe
-                    x: pos.x as string,
-                    y: pos.y as string
+                    x: pos.x,
+                    y: pos.y
                 }
             ]);
         });
@@ -416,7 +453,7 @@ export class Channel extends EventEmitter {
      */
     public isLobby() {
         for (const reg of config.lobbyRegexes) {
-            let exp = new RegExp(reg, "g");
+            const exp = new RegExp(reg, "g");
 
             if (this.getID().match(exp)) {
                 return true;
@@ -430,9 +467,13 @@ export class Channel extends EventEmitter {
      * Determine whether this channel is a lobby with the name "lobby" in it
      */
     public isTrueLobby() {
-        if (this.getID().match("^lobby[0-9][0-9]$") && this.getID().match("^lobby[0-9]$") && this.getID().match("^lobby$"), "^lobbyNaN$") return true;
-
-        return false;
+        const _id = this.getID();
+        return (
+            _id.match("^lobby[0-9][0-9]$") &&
+            _id.match("^lobby[0-9]$") &&
+            _id.match("^lobby$") &&
+            _id.match("^lobbyNaN$")
+        );
     }
 
     /**
@@ -441,10 +482,7 @@ export class Channel extends EventEmitter {
      * @param admin Whether a user is changing the settings (set to true to force the changes)
      * @returns undefined
      */
-    public changeSettings(
-        set: Partial<IChannelSettings>,
-        admin: boolean = false
-    ) {
+    public changeSettings(set: Partial<IChannelSettings>, admin = false) {
         if (this.isDestroyed()) return;
         if (!admin) {
             if (set.lobby) set.lobby = undefined;
@@ -452,8 +490,8 @@ export class Channel extends EventEmitter {
         }
 
         if (
-            typeof set.color == "string" &&
-            (typeof set.color2 == "undefined" ||
+            typeof set.color === "string" &&
+            (typeof set.color2 === "undefined" ||
                 set.color2 === this.settings.color2)
         ) {
             set.color2 = darken(set.color);
@@ -467,8 +505,8 @@ export class Channel extends EventEmitter {
         // Set the verified settings
         for (const key of Object.keys(validatedSet)) {
             //this.logger.debug(`${key}: ${(validatedSet as any)[key]}`);
-            if ((validatedSet as any)[key] === false) continue;
-            (this.settings as any)[key] = (set as any)[key];
+            if (validatedSet[key] === false) continue;
+            this.settings[key] = set[key];
         }
 
         /*
@@ -524,13 +562,17 @@ export class Channel extends EventEmitter {
                 for (const ch of chs) {
                     const chid = ch.getID();
 
-                    if (chid == config.fullChannel) {
+                    if (chid === config.fullChannel) {
                         const banTime = this.getBanTime(socket.getUserID());
 
                         //this.logger.debug("Ban time:", banTime);
 
                         if (banTime) {
-                            const minutes = Math.floor((banTime.endTime - banTime.startTime) / 1000 / 60);
+                            const minutes = Math.floor(
+                                (banTime.endTime - banTime.startTime) /
+                                    1000 /
+                                    60
+                            );
 
                             socket.sendNotification({
                                 class: "short",
@@ -540,7 +582,8 @@ export class Channel extends EventEmitter {
                             });
                         }
 
-                        return socket.setChannel(chid)
+                        socket.setChannel(chid);
+                        return;
                     }
                 }
             }
@@ -554,7 +597,8 @@ export class Channel extends EventEmitter {
                     const nextID = this.getNextLobbyID();
                     //this.logger.debug("New ID:", nextID);
                     // Move them to the next lobby
-                    return socket.setChannel(nextID);
+                    socket.setChannel(nextID);
+                    return;
                 }
             }
         }
@@ -566,7 +610,7 @@ export class Channel extends EventEmitter {
 
             for (const p of this.ppl) {
                 if (p.id !== part.id) continue;
-                p.uuids.push(socket.getUUID())
+                p.uuids.push(socket.getUUID());
             }
 
             //socket.sendChannelUpdate(this.getInfo(), this.getParticipantList());
@@ -578,9 +622,9 @@ export class Channel extends EventEmitter {
                 name: part.name,
                 color: part.color,
                 id: part.id,
-                tag: part.tag,
                 uuids: [socket.getUUID()],
-                flags: socket.getUserFlags() || {}
+                flags: socket.getUserFlags() || {},
+                tag: part.tag
             });
         }
 
@@ -590,7 +634,7 @@ export class Channel extends EventEmitter {
             if (socket.currentChannelID) {
                 // Find the other channel they were in
                 const ch = ChannelList.getList().find(
-                    ch => ch._id == socket.currentChannelID
+                    ch => ch._id === socket.currentChannelID
                 );
 
                 // Tell the channel they left
@@ -611,7 +655,7 @@ export class Channel extends EventEmitter {
             if (this.crown && config.chownOnRejoin) {
                 // TODO Should we check participant ID as well?
                 if (typeof this.crown.userId !== "undefined") {
-                    if (socket.getUserID() == this.crown.userId) {
+                    if (socket.getUserID() === this.crown.userId) {
                         // Check if they exist
                         const p = socket.getParticipant();
 
@@ -653,7 +697,8 @@ export class Channel extends EventEmitter {
                     color: part.color,
                     id: part.id,
                     x: cursorPos.x,
-                    y: cursorPos.y
+                    y: cursorPos.y,
+                    tag: usersConfig.enableTags ? part.tag : undefined
                 }
             ],
             part.id
@@ -676,9 +721,9 @@ export class Channel extends EventEmitter {
         const part = socket.getParticipant() as Participant;
 
         let dupeCount = 0;
-        for (const s of socketsBySocketID.values()) {
-            if (s.getParticipantID() == part.id) {
-                if (s.currentChannelID == this.getID()) {
+        for (const s of socketsByUUID.values()) {
+            if (s.getParticipantID() === part.id) {
+                if (s.currentChannelID === this.getID()) {
                     dupeCount++;
                 }
             }
@@ -686,14 +731,14 @@ export class Channel extends EventEmitter {
 
         // this.logger.debug("Dupes:", dupeCount);
 
-        if (dupeCount == 1) {
-            const p = this.ppl.find(p => p.id == socket.getParticipantID());
+        if (dupeCount === 1) {
+            const p = this.ppl.find(p => p.id === socket.getParticipantID());
 
             if (p) {
                 this.ppl.splice(this.ppl.indexOf(p), 1);
 
                 if (this.crown) {
-                    if (this.crown.participantId == p.id) {
+                    if (this.crown.participantId === p.id) {
                         // Channel owner left, reset crown timeout
                         this.chown();
                     }
@@ -751,19 +796,22 @@ export class Channel extends EventEmitter {
 
     /**
      * Get the people in this channel
+     * @param showVanished Whether to include vanished users
      * @returns List of people
      */
-    public getParticipantList() {
+    public getParticipantList(showVanished = false) {
         const ppl = [];
 
         for (const p of this.ppl) {
-            if (p.flags.vanish) continue;
+            if (p.flags.vanish && !showVanished) continue;
+
             ppl.push({
                 _id: p._id,
                 name: p.name,
                 color: p.color,
                 id: p.id,
-                tag: usersConfig.enableTags ? p.tag : undefined
+                tag: usersConfig.enableTags ? p.tag : undefined,
+                vanished: p.flags.vanish
             });
         }
 
@@ -780,7 +828,7 @@ export class Channel extends EventEmitter {
      * @returns Boolean
      */
     public hasUser(_id: string) {
-        const foundPart = this.ppl.find(p => p._id == _id);
+        const foundPart = this.ppl.find(p => p._id === _id);
         return !!foundPart;
     }
 
@@ -790,7 +838,7 @@ export class Channel extends EventEmitter {
      * @returns Boolean
      */
     public hasParticipant(id: string) {
-        const foundPart = this.ppl.find(p => p.id == id);
+        const foundPart = this.ppl.find(p => p.id === id);
         return !!foundPart;
     }
 
@@ -802,19 +850,18 @@ export class Channel extends EventEmitter {
         arr: ClientEvents[EventID][],
         blockPartID?: string
     ) {
-        let sentSocketIDs = new Array<string>();
+        const sentSocketIDs = new Array<string>();
 
         for (const p of this.ppl) {
             if (blockPartID) {
-                if (p.id == blockPartID) continue;
+                if (p.id === blockPartID) continue;
             }
 
-            socketLoop: for (const socket of socketsBySocketID.values()) {
-                if (socket.isDestroyed()) continue socketLoop;
-                if (!socket.socketID) continue socketLoop;
-                if (socket.getParticipantID() != p.id) continue socketLoop;
-                if (sentSocketIDs.includes(socket.socketID))
-                    continue socketLoop;
+            for (const socket of socketsByUUID.values()) {
+                if (socket.isDestroyed()) continue;
+                if (!socket.socketID) continue;
+                if (socket.getParticipantID() !== p.id) continue;
+                if (sentSocketIDs.includes(socket.socketID)) continue;
                 socket.sendArray(arr);
                 sentSocketIDs.push(socket.socketID);
             }
@@ -837,27 +884,27 @@ export class Channel extends EventEmitter {
             pianoPartID = part.id;
         }
 
-        let clientMsg: ClientEvents["n"] = {
+        const clientMsg: ClientEvents["n"] = {
             m: "n",
             n: msg.n,
             t: msg.t,
             p: pianoPartID
         };
 
-        let sentSocketIDs = new Array<string>();
+        const sentSocketIDs = new Array<string>();
 
         for (const p of this.ppl) {
-            socketLoop: for (const sock of socketsBySocketID.values()) {
-                if (sock.isDestroyed()) continue socketLoop;
-                if (!sock.socketID) continue socketLoop;
+            for (const sock of socketsByUUID.values()) {
+                if (sock.isDestroyed()) continue;
+                if (!sock.socketID) continue;
 
                 if (socket) {
-                    if (sock.getUUID() == socket.getUUID()) continue socketLoop;
+                    if (sock.getUUID() === socket.getUUID()) continue;
                 }
 
-                if (sock.getParticipantID() != p.id) continue socketLoop;
+                if (sock.getParticipantID() !== p.id) continue;
                 //if (socket.getParticipantID() == part.id) continue socketLoop;
-                if (sentSocketIDs.includes(sock.socketID)) continue socketLoop;
+                if (sentSocketIDs.includes(sock.socketID)) continue;
 
                 sock.sendArray([clientMsg]);
                 sentSocketIDs.push(sock.socketID);
@@ -876,7 +923,7 @@ export class Channel extends EventEmitter {
         this.destroyed = true;
 
         if (this.ppl.length > 0) {
-            for (const socket of socketsBySocketID.values()) {
+            for (const socket of socketsByUUID.values()) {
                 if (socket.currentChannelID !== this.getID()) continue;
                 socket.setChannel(config.fullChannel);
             }
@@ -939,31 +986,31 @@ export class Channel extends EventEmitter {
         if (this.crown) {
             this.crown.time = Date.now();
 
-            let socket;
+            let socket: Socket | undefined;
             if (this.crown.participantId)
                 socket = findSocketByPartID(this.crown.participantId);
 
-            let x = Math.random() * 100;
-            let y1 = Math.random() * 100;
-            let y2 = y1 + Math.random() * (100 - y1);
+            const x = Math.random() * 100;
+            const y1 = Math.random() * 100;
+            const y2 = y1 + Math.random() * (100 - y1);
 
             if (socket) {
                 const cursorPos = socket.getCursorPos();
 
                 let cursorX = cursorPos.x;
-                if (typeof cursorPos.x == "string")
-                    cursorX = parseInt(cursorPos.x);
+                if (typeof cursorPos.x === "string")
+                    cursorX = Number.parseInt(cursorPos.x);
 
                 let cursorY = cursorPos.y;
-                if (typeof cursorPos.y == "string")
-                    cursorY = parseInt(cursorPos.y);
+                if (typeof cursorPos.y === "string")
+                    cursorY = Number.parseInt(cursorPos.y);
             }
 
             // Screen positions
             this.crown.startPos = { x, y: y1 };
             this.crown.endPos = { x, y: y2 };
 
-            delete this.crown.participantId;
+            this.crown.participantId = undefined;
 
             //this.logger.debug("Update from dropCrown");
             this.emit("update", this);
@@ -975,14 +1022,18 @@ export class Channel extends EventEmitter {
      * @param _id User ID to ban
      * @param t Time in millseconds to ban for
      **/
-    public async kickban(_id: string, t: number = 1000 * 60 * 30, banner?: string) {
+    public async kickban(
+        _id: string,
+        t: number = 1000 * 60 * 30,
+        banner?: string
+    ) {
         const now = Date.now();
         if (t < 0 || t > 300 * 60 * 1000) return;
 
         let shouldUpdate = false;
 
         const banChannel = ChannelList.getList().find(
-            ch => ch.getID() == config.fullChannel
+            ch => ch.getID() === config.fullChannel
         );
 
         if (!banChannel) return;
@@ -990,8 +1041,8 @@ export class Channel extends EventEmitter {
         // Check if they are on the server at all
         let bannedPart: Participant | undefined;
         const bannedUUIDs: string[] = [];
-        for (const sock of socketsBySocketID.values()) {
-            if (sock.getUserID() == _id) {
+        for (const sock of socketsByUUID.values()) {
+            if (sock.getUserID() === _id) {
                 bannedUUIDs.push(sock.getUUID());
                 const part = sock.getParticipant();
 
@@ -1001,7 +1052,7 @@ export class Channel extends EventEmitter {
 
         if (!bannedPart) return;
 
-        let isBanned = this.bans.map(b => b.userId).includes(_id);
+        const isBanned = this.bans.map(b => b.userId).includes(_id);
         let overwrite = false;
 
         if (isBanned) {
@@ -1019,24 +1070,24 @@ export class Channel extends EventEmitter {
 
             shouldUpdate = true;
         } else {
-
             for (const ban of this.bans) {
                 if (ban.userId !== _id) continue;
                 ban.startTime = now;
                 ban.endTime = now + t;
             }
 
-
             shouldUpdate = true;
         }
 
         uuidsToKick = [...uuidsToKick, ...bannedUUIDs];
 
-        for (const socket of socketsBySocketID.values()) {
+        for (const socket of socketsByUUID.values()) {
             if (uuidsToKick.indexOf(socket.getUUID()) !== -1) {
                 socket.sendNotification({
                     title: "Notice",
-                    text: `Banned from "${this.getID()}" for ${Math.floor(t / 1000 / 60)} minutes.`,
+                    text: `Banned from "${this.getID()}" for ${Math.floor(
+                        t / 1000 / 60
+                    )} minutes.`,
                     duration: 7000,
                     target: "#room",
                     class: "short"
@@ -1045,7 +1096,7 @@ export class Channel extends EventEmitter {
                 // If they are here, move them to the ban channel
                 const ch = socket.getCurrentChannel();
                 if (ch) {
-                    if (ch.getID() == this.getID())
+                    if (ch.getID() === this.getID())
                         socket.setChannel(banChannel.getID());
                 }
             }
@@ -1056,14 +1107,19 @@ export class Channel extends EventEmitter {
             this.emit("update", this);
 
             if (typeof banner !== "undefined") {
-                const p = this.getParticipantListUnsanitized().find(p => p._id == banner);
+                const p = this.getParticipantListUnsanitized().find(
+                    p => p._id === banner
+                );
                 const minutes = Math.floor(t / 1000 / 60);
 
                 if (p && bannedPart) {
-                    await this.sendChat({
-                        m: "a",
-                        message: `Banned ${bannedPart.name} from the channel for ${minutes} minutes.`
-                    }, p);
+                    await this.sendChat(
+                        {
+                            m: "a",
+                            message: `Banned ${bannedPart.name} from the channel for ${minutes} minutes.`
+                        },
+                        p
+                    );
                     this.sendNotification({
                         title: "Notice",
                         text: `${p.name} banned ${bannedPart.name} from the channel for ${minutes} minutes.`,
@@ -1072,7 +1128,7 @@ export class Channel extends EventEmitter {
                         class: "short"
                     });
 
-                    if (banner == _id) {
+                    if (banner === _id) {
                         const certificate = {
                             title: "Certificate of Award",
                             text: `Let it be known that ${p.name} kickbanned him/her self.`,
@@ -1082,7 +1138,7 @@ export class Channel extends EventEmitter {
 
                         this.sendNotification(certificate);
 
-                        for (const s of socketsBySocketID.values()) {
+                        for (const s of socketsByUUID.values()) {
                             const userID = s.getUserID();
                             if (!userID) continue;
                             if (userID !== banner) continue;
@@ -1110,7 +1166,7 @@ export class Channel extends EventEmitter {
             }
 
             // Check if they are banned
-            if (ban.userId == _id) {
+            if (ban.userId === _id) {
                 return true;
             }
         }
@@ -1128,7 +1184,7 @@ export class Channel extends EventEmitter {
         if (!isBanned) return;
 
         for (const ban of this.bans) {
-            if (ban.userId == _id) {
+            if (ban.userId === _id) {
                 this.bans.splice(this.bans.indexOf(ban), 1);
             }
         }
@@ -1141,34 +1197,38 @@ export class Channel extends EventEmitter {
         this.chatHistory = [];
         await saveChatHistory(this.getID(), this.chatHistory);
 
-        this.sendArray([{
-            m: "c",
-            c: this.chatHistory
-        }]);
+        this.sendArray([
+            {
+                m: "c",
+                c: this.chatHistory
+            }
+        ]);
     }
 
     /**
-    * Send a notification to this channel
-    * @param notif Notification to send
-    **/
+     * Send a notification to this channel
+     * @param notif Notification to send
+     **/
     public sendNotification(notif: Notification) {
-        this.sendArray([{
-            m: "notification",
-            id: notif.id,
-            target: notif.target,
-            duration: notif.duration,
-            class: notif.class,
-            title: notif.title,
-            text: notif.text,
-            html: notif.html
-        }]);
+        this.sendArray([
+            {
+                m: "notification",
+                id: notif.id,
+                target: notif.target,
+                duration: notif.duration,
+                class: notif.class,
+                title: notif.title,
+                text: notif.text,
+                html: notif.html
+            }
+        ]);
     }
 
     /**
-    * Send a message in chat
-    * @param msg Chat message event to send
-    * @param p Participant who is "sending the message"
-    **/
+     * Send a message in chat
+     * @param msg Chat message event to send
+     * @param p Participant who is "sending the message"
+     **/
     public async sendChat(msg: ServerEvents["a"], p: Participant) {
         if (!msg.message) return;
 
@@ -1180,7 +1240,7 @@ export class Channel extends EventEmitter {
             .replace(/(\p{Mc}{5})\p{Mc}+/gu, "$1")
             .trim();
 
-        let outgoing: ClientEvents["a"] = {
+        const outgoing: ClientEvents["a"] = {
             m: "a",
             a: msg.message,
             t: Date.now(),
@@ -1203,10 +1263,13 @@ export class Channel extends EventEmitter {
      * @param message Message to send in chat
      **/
     public async sendChatAdmin(message: string) {
-        this.sendChat({
-            m: "a",
-            message
-        }, usersConfig.adminParticipant);
+        this.sendChat(
+            {
+                m: "a",
+                message
+            },
+            usersConfig.adminParticipant
+        );
     }
 
     /**
@@ -1214,7 +1277,10 @@ export class Channel extends EventEmitter {
      * @param key Flag ID
      * @param val Value of which the flag will be set to
      **/
-    public setFlag(key: string, val: any) {
+    public setFlag<K extends keyof TChannelFlags>(
+        key: K,
+        val: TChannelFlags[K]
+    ) {
         this.flags[key] = val;
     }
 
@@ -1223,7 +1289,7 @@ export class Channel extends EventEmitter {
      * @param key Flag ID
      * @returns Value of flag
      **/
-    public getFlag(key: string) {
+    public getFlag<K extends keyof TChannelFlags>(key: K) {
         return this.flags[key];
     }
 
@@ -1231,7 +1297,7 @@ export class Channel extends EventEmitter {
      * Set the flags on this channel
      * @param flags Flags to set
      **/
-    public setFlags(flags: Record<string, any>) {
+    public setFlags(flags: TChannelFlags) {
         this.flags = flags;
         this.save();
         this.emit("update", this);
@@ -1244,8 +1310,8 @@ export class Channel extends EventEmitter {
     public getNextLobbyID() {
         try {
             const id = this.getID();
-            if (id == "lobby") return "lobby2";
-            const num = parseInt(id.substring(5));
+            if (id === "lobby") return "lobby2";
+            const num = Number.parseInt(id.substring(5));
             return `lobby${num + 1}`;
         } catch (err) {
             return config.fullChannel;
@@ -1259,7 +1325,7 @@ export class Channel extends EventEmitter {
      **/
     public getBanTime(userId: string) {
         for (const ban of this.bans) {
-            if (userId == ban.userId) {
+            if (userId === ban.userId) {
                 return { endTime: ban.endTime, startTime: ban.startTime };
             }
         }
@@ -1270,7 +1336,13 @@ export class Channel extends EventEmitter {
      **/
     public printMemoryInChat() {
         const mem = heapStats();
-        this.sendChatAdmin(`Used: ${(mem.heapSize / 1000 / 1000).toFixed(2)}M / Allocated: ${(mem.heapCapacity / 1000 / 1000).toFixed(2)}M`);
+        this.sendChatAdmin(
+            `Used: ${(mem.heapSize / 1000 / 1000).toFixed(2)}M / Allocated: ${(
+                mem.heapCapacity /
+                1000 /
+                1000
+            ).toFixed(2)}M`
+        );
     }
 }
 

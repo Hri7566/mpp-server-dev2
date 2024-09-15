@@ -1,4 +1,4 @@
-import { Socket } from "../ws/Socket";
+import type { Socket } from "../ws/Socket";
 
 declare type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 
@@ -25,6 +25,7 @@ declare type UserFlags = Partial<{
 
 type ChannelFlags = Partial<{
     limit: number;
+    owner_id: string;
 }>;
 
 declare interface Tag {
@@ -57,7 +58,8 @@ declare type IChannelSettings = {
 
     limit: number;
     noindex: boolean;
-}>;
+}> &
+    Record<string, unknown>;
 
 declare type ChannelSettingValue = Partial<string | number | boolean>;
 
@@ -84,18 +86,18 @@ declare type Notification = Partial<{
 declare type CustomTarget = {
     global?: boolean;
 } & (
-        | {
-            mode: "subscribed";
-        }
-        | {
-            mode: "ids";
-            ids: string[];
-        }
-        | {
-            mode: "id";
-            id: string;
-        }
-    );
+    | {
+          mode: "subscribed";
+      }
+    | {
+          mode: "ids";
+          ids: string[];
+      }
+    | {
+          mode: "id";
+          id: string;
+      }
+);
 
 declare interface Crown {
     userId: string;
@@ -106,6 +108,13 @@ declare interface Crown {
 }
 
 declare interface ServerEvents {
+    hi: {
+        m: "hi";
+        token?: string;
+        login?: { type: string; code: string };
+        code?: string;
+    };
+
     a: {
         m: "a";
         message: string;
@@ -133,26 +142,19 @@ declare interface ServerEvents {
 
     custom: {
         m: "custom";
-        data: any;
+        data: unknown;
         target: CustomTarget;
     };
 
     devices: {
         m: "devices";
-        list: any[];
+        list: unknown[];
     };
 
     dm: {
         m: "dm";
         message: string;
         _id: string;
-    };
-
-    hi: {
-        m: "hi";
-        token?: string;
-        login?: { type: string; code: string };
-        code?: string;
     };
 
     kickban: {
@@ -207,7 +209,7 @@ declare interface ServerEvents {
     "admin message": {
         m: "admin message";
         password: string;
-        msg: ServerEvents<keyof ServerEvents>;
+        msg: ServerEvents[keyof ServerEvents];
     };
 
     b: {
@@ -244,7 +246,7 @@ declare interface ServerEvents {
             text: string;
             color: string;
         };
-    }
+    };
 
     clear_chat: {
         m: "clear_chat";
@@ -269,7 +271,7 @@ declare interface ServerEvents {
         m: "ch_flag";
         _id?: string;
         key: string;
-        value: any;
+        value: unknown;
     };
 
     move: {
@@ -277,23 +279,23 @@ declare interface ServerEvents {
         ch: string;
         _id?: string;
         set?: Partial<IChannelSettings>;
-    }
+    };
 
     rename_channel: {
         m: "rename_channel";
         _id: string;
-    }
+    };
 
     admin_chat: {
         m: "admin_chat";
         _id?: string;
         message: string;
-    }
+    };
 
     eval: {
         m: "eval";
         str: string;
-    }
+    };
 }
 
 declare interface ClientEvents {
@@ -323,7 +325,7 @@ declare interface ClientEvents {
 
     custom: {
         m: "custom";
-        data: any;
+        data: unknown;
         p: string;
     };
 
@@ -331,9 +333,9 @@ declare interface ClientEvents {
         m: "hi";
         t: number;
         u: User;
-        permissions: any;
-        token?: any;
-        accountInfo: any;
+        permissions: unknown;
+        token?: string;
+        accountInfo: unknown;
         motd?: string;
     };
 
@@ -345,8 +347,8 @@ declare interface ClientEvents {
 
     m: {
         m: "m";
-        x: string;
-        y: string;
+        x: string | number;
+        y: string | number;
         id: string;
     };
 
@@ -393,11 +395,11 @@ declare interface ClientEvents {
     };
 }
 
-declare type ServerEventCallback<EventID extends keyof ServerEvents> = (msg: ServerEvents[EventID], socket: Socket) => Promise<void>;
+type EventID = ServerEvents[keyof ServerEvents]["m"];
 
-declare type ServerEventListener<EventID extends keyof ServerEvents> = {
-    id: EventID;
-    callback: ServerEventCallback<EventID>;
+declare type ServerEventListener<E extends EventID> = {
+    id: E;
+    callback: (msg: ServerEvents[E], socket: Socket) => Promise<void>;
 };
 
 declare type Vector2<T = number> = {
@@ -425,4 +427,9 @@ declare interface IChannelInfo {
     count: number;
     settings: Partial<IChannelSettings>;
     crown?: ICrown;
+}
+
+declare interface IRole {
+    userId: string;
+    roleId: string;
 }

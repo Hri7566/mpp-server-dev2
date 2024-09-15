@@ -1,6 +1,6 @@
 import { RateLimit } from "../RateLimit";
 import { RateLimitChain } from "../RateLimitChain";
-import { RateLimitConstructorList, config } from "../config";
+import { type RateLimitConstructorList, config } from "../config";
 
 export const adminLimits: RateLimitConstructorList = {
     normal: {

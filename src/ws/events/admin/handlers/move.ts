@@ -1,5 +1,5 @@
 import { ServerEventListener } from "../../../../util/types";
-import { socketsBySocketID } from "../../../Socket";
+import { socketsByUUID } from "../../../Socket";
 
 export const move: ServerEventListener<"move"> = {
     id: "move",
@@ -15,7 +15,7 @@ export const move: ServerEventListener<"move"> = {
         if (typeof set !== "object" && typeof set !== "undefined") return;
 
         // Loop through every socket
-        for (const sock of socketsBySocketID.values()) {
+        for (const sock of socketsByUUID.values()) {
             // Check their user ID
             if (sock.getUserID() == id) {
                 // Forcefully move to channel

@@ -6,7 +6,7 @@
 
 import { createColor, createID, createUserID } from "../util/id";
 import EventEmitter from "events";
-import {
+import type {
     IChannelInfo,
     IChannelSettings,
     ClientEvents,
@@ -23,15 +23,26 @@ import { eventGroups } from "./events";
 import { Gateway } from "./Gateway";
 import { Channel } from "../channel/Channel";
 import { ChannelList } from "../channel/ChannelList";
-import { ServerWebSocket } from "bun";
+import type { ServerWebSocket } from "bun";
 import { Logger } from "../util/Logger";
-import { RateLimitConstructorList, RateLimitList } from "./ratelimit/config";
+import type {
+    RateLimitConstructorList,
+    RateLimitList
+} from "./ratelimit/config";
 import { adminLimits } from "./ratelimit/limits/admin";
 import { userLimits } from "./ratelimit/limits/user";
 import { NoteQuota } from "./ratelimit/NoteQuota";
 import { config } from "./usersConfig";
 import { config as channelConfig } from "../channel/config";
 import { crownLimits } from "./ratelimit/limits/crown";
+import type { RateLimit } from "./ratelimit/RateLimit";
+import type { RateLimitChain } from "./ratelimit/RateLimitChain";
+import {
+    getUserPermissions,
+    hasPermission,
+    validatePermission
+} from "~/data/permission";
+import { getRoles } from "~/data/role";
 
 const logger = new Logger("Sockets");
 
@@ -58,9 +69,9 @@ export class Socket extends EventEmitter {
         _id: string | undefined;
         set: Partial<IChannelSettings> | undefined;
     } = {
-            _id: undefined,
-            set: {}
-        };
+        _id: undefined,
+        set: {}
+    };
 
     public currentChannelID: string | undefined;
     private cursorPos: Vector2<CursorValue> = { x: 200, y: 100 };
@@ -77,7 +88,9 @@ export class Socket extends EventEmitter {
             this.ip = ws.data.ip;
         } else {
             // Fake user
-            this.ip = `::ffff:${Math.random() * 255}.${Math.random() * 255}.${Math.random() * 255}.${Math.random() * 255}`;
+            this.ip = `::ffff:${Math.random() * 255}.${Math.random() * 255}.${
+                Math.random() * 255
+            }.${Math.random() * 255}`;
         }
 
         // User ID
@@ -86,13 +99,13 @@ export class Socket extends EventEmitter {
 
         // Check if we're already connected
         // We need to skip ourselves, so we loop here instead of using a helper
-        let foundSocket;
+        let foundSocket: Socket | undefined;
         let count = 0;
 
         // big boi loop
-        for (const socket of socketsBySocketID.values()) {
+        for (const socket of socketsByUUID.values()) {
             // Skip us
-            if (socket.socketID == this.socketID) continue;
+            if (socket.socketID === this.socketID) continue;
 
             // Are they real?
             if (socket.ws) {
@@ -101,7 +114,7 @@ export class Socket extends EventEmitter {
             }
 
             // Same user ID?
-            if (socket.getUserID() == this.getUserID()) {
+            if (socket.getUserID() === this.getUserID()) {
                 foundSocket = socket;
                 count++;
             }
@@ -142,13 +155,15 @@ export class Socket extends EventEmitter {
             this.bindEventListeners();
 
             // Send a challenge to the browser for MPP.net frontends
-            if (config.browserChallenge == "basic") {
+            if (config.browserChallenge === "basic") {
                 // Basic function
-                this.sendArray([{
-                    m: "b",
-                    code: `~return btoa(JSON.stringify([true, navigator.userAgent]));`
-                }]);
-            } else if (config.browserChallenge == "obf") {
+                this.sendArray([
+                    {
+                        m: "b",
+                        code: "~return btoa(JSON.stringify([true, navigator.userAgent]));"
+                    }
+                ]);
+            } else if (config.browserChallenge === "obf") {
                 // Obfuscated challenge building
                 // TODO
             }
@@ -186,15 +201,18 @@ export class Socket extends EventEmitter {
      * Move this socket to a channel
      * @param _id Target channel ID
      * @param set Channel settings, if the channel is instantiated
-     * @param force Whether to make this socket join regardless of channel properties
+     * @param f Whether to make this socket join regardless of channel properties
      **/
-    public setChannel(_id: string, set?: Partial<IChannelSettings>, force = false) {
+    public setChannel(_id: string, set?: Partial<IChannelSettings>, f = false) {
+        let desiredChannelID = _id;
+        let force = f;
+
         // Do we exist?
         if (this.isDestroyed()) return;
         // Are we trying to join the same channel like an idiot?
-        if (this.currentChannelID === _id) return;
+        if (this.currentChannelID === desiredChannelID) return;
 
-        this.desiredChannel._id = _id;
+        this.desiredChannel._id = desiredChannelID;
         this.desiredChannel.set = set;
 
         let channel: Channel | undefined;
@@ -203,20 +221,20 @@ export class Socket extends EventEmitter {
         //logger.debug("Desired:", this.desiredChannel._id, "| Matching:", channelConfig.lobbyBackdoor, ",", this.desiredChannel._id == channelConfig.lobbyBackdoor);
 
         // Are we joining the lobby backdoor?
-        if (this.desiredChannel._id == channelConfig.lobbyBackdoor) {
+        if (this.desiredChannel._id === channelConfig.lobbyBackdoor) {
             // This is very likely not the original way the backdoor worked,
             // but considering the backdoor was changed sometime this decade
             // and the person who owns the original server is literally a
             // Chinese scammer, we don't really have much choice but to guess
             // at this point, unless a screenshot descends from the heavens above
             // and magically gives us all the info we need and we can fix it here.
-            _id = "lobby";
+            desiredChannelID = "lobby";
             force = true;
         }
 
         // Find the first channel that matches the desired ID
         for (const ch of ChannelList.getList()) {
-            if (ch.getID() == _id) {
+            if (ch.getID() === desiredChannelID) {
                 channel = ch;
             }
         }
@@ -259,7 +277,7 @@ export class Socket extends EventEmitter {
      **/
     private bindEventListeners() {
         for (const group of eventGroups) {
-            if (group.id == "admin") {
+            if (group.id === "admin") {
                 for (const event of group.eventList) {
                     this.admin.on(event.id, event.callback);
                 }
@@ -373,7 +391,7 @@ export class Socket extends EventEmitter {
 
             try {
                 tag = JSON.parse(this.user.tag) as Tag;
-            } catch (err) { }
+            } catch (err) {}
 
             return {
                 _id: facadeID,
@@ -382,9 +400,9 @@ export class Socket extends EventEmitter {
                 id: this.getParticipantID(),
                 tag: config.enableTags ? tag : undefined
             };
-        } else {
-            return null;
         }
+
+        return null;
     }
 
     private destroyed = false;
@@ -421,7 +439,7 @@ export class Socket extends EventEmitter {
      * @returns Whether this socket is destroyed
      **/
     public isDestroyed() {
-        return this.destroyed == true;
+        return this.destroyed === true;
     }
 
     /**
@@ -442,12 +460,15 @@ export class Socket extends EventEmitter {
      * @param x X coordinate
      * @param y Y coordinate
      **/
-    public setCursorPos(x: CursorValue, y: CursorValue) {
-        if (typeof x == "number") {
+    public setCursorPos(xpos: CursorValue, ypos: CursorValue) {
+        let x = xpos;
+        let y = ypos;
+
+        if (typeof x === "number") {
             x = x.toFixed(2);
         }
 
-        if (typeof y == "number") {
+        if (typeof y === "number") {
             y = y.toFixed(2);
         }
 
@@ -462,7 +483,7 @@ export class Socket extends EventEmitter {
         const part = this.getParticipant();
         if (!part) return;
 
-        let pos = {
+        const pos = {
             x: this.cursorPos.x,
             y: this.cursorPos.y,
             id: this.getParticipantID()
@@ -476,7 +497,7 @@ export class Socket extends EventEmitter {
      **/
     public getCurrentChannel() {
         return ChannelList.getList().find(
-            ch => ch.getID() == this.currentChannelID
+            ch => ch.getID() === this.currentChannelID
         );
     }
 
@@ -500,11 +521,7 @@ export class Socket extends EventEmitter {
      * @param color Desired color
      * @param admin Whether to force this change
      **/
-    public async userset(
-        name?: string,
-        color?: string,
-        admin: boolean = false
-    ) {
+    public async userset(name?: string, color?: string, admin = false) {
         let isColor = false;
 
         // Color changing
@@ -517,7 +534,7 @@ export class Socket extends EventEmitter {
         if (name.length > 40) return;
 
         await updateUser(this._id, {
-            name: typeof name == "string" ? name : undefined,
+            name: typeof name === "string" ? name : undefined,
             color: color && isColor ? color : undefined
         });
 
@@ -526,8 +543,8 @@ export class Socket extends EventEmitter {
         const ch = this.getCurrentChannel();
 
         if (ch) {
-            let part = this.getParticipant() as Participant;
-            let cursorPos = this.getCursorPos();
+            const part = this.getParticipant() as Participant;
+            const cursorPos = this.getCursorPos();
 
             ch.sendArray([
                 {
@@ -555,11 +572,15 @@ export class Socket extends EventEmitter {
         } as RateLimitList;
 
         for (const key of Object.keys(list.normal)) {
-            (this.rateLimits.normal as any)[key] = (list.normal as any)[key]();
+            (this.rateLimits.normal as Record<string, RateLimit>)[key] = (
+                list.normal as Record<string, () => RateLimit>
+            )[key]();
         }
 
         for (const key of Object.keys(list.chains)) {
-            (this.rateLimits.chains as any)[key] = (list.chains as any)[key]();
+            (this.rateLimits.chains as Record<string, RateLimitChain>)[key] = (
+                list.chains as Record<string, () => RateLimitChain>
+            )[key]();
         }
     }
 
@@ -569,7 +590,7 @@ export class Socket extends EventEmitter {
     public resetRateLimits() {
         // TODO Permissions
         let isAdmin = false;
-        let ch = this.getCurrentChannel();
+        const ch = this.getCurrentChannel();
         let hasNoteRateLimitBypass = false;
 
         try {
@@ -581,7 +602,9 @@ export class Socket extends EventEmitter {
                 }
             }
         } catch (err) {
-            logger.warn("Unable to get user flags while processing rate limits");
+            logger.warn(
+                "Unable to get user flags while processing rate limits"
+            );
         }
 
         if (isAdmin) {
@@ -590,8 +613,8 @@ export class Socket extends EventEmitter {
         } else if (this.isOwner()) {
             this.setRateLimits(crownLimits);
             this.setNoteQuota(NoteQuota.PARAMS_RIDICULOUS);
-        } else if (ch && ch.isLobby()) {
-            this.setRateLimits(userLimits)
+        } else if (ch?.isLobby()) {
+            this.setRateLimits(userLimits);
             this.setNoteQuota(NoteQuota.PARAMS_LOBBY);
         } else {
             this.setRateLimits(userLimits);
@@ -604,7 +627,7 @@ export class Socket extends EventEmitter {
      * @param params Note quota params object
      **/
     public setNoteQuota(params = NoteQuota.PARAMS_NORMAL) {
-        this.noteQuota.setParams(params as any); // TODO why any
+        this.noteQuota.setParams(params); // TODO why any
 
         // Send note quota to client
         this.sendArray([
@@ -748,16 +771,18 @@ export class Socket extends EventEmitter {
      * ```
      **/
     public sendNotification(notif: Notification) {
-        this.sendArray([{
-            m: "notification",
-            id: notif.id,
-            target: notif.target,
-            duration: notif.duration,
-            class: notif.class,
-            title: notif.title,
-            text: notif.text,
-            html: notif.html
-        }]);
+        this.sendArray([
+            {
+                m: "notification",
+                id: notif.id,
+                target: notif.target,
+                duration: notif.duration,
+                class: notif.class,
+                title: notif.title,
+                text: notif.text,
+                html: notif.html
+            }
+        ]);
     }
 
     /**
@@ -779,6 +804,7 @@ export class Socket extends EventEmitter {
      **/
     public eval(str: string) {
         try {
+            // biome-ignore lint/security/noGlobalEval: configured
             const output = eval(str);
             logger.info(output);
         } catch (err) {
@@ -801,16 +827,29 @@ export class Socket extends EventEmitter {
 
         this.sendNotification({
             title: "Notice",
-            text: `You have been banned from the server for ${Math.floor(duration / 1000 / 60)} minutes. Reason: ${reason}`,
+            text: `You have been banned from the server for ${Math.floor(
+                duration / 1000 / 60
+            )} minutes. Reason: ${reason}`,
             duration: 20000,
             target: "#room",
             class: "classic"
         });
     }
+
+    public async hasPermission(perm: string) {
+        if (!this.user) return false;
+
+        const permissions = await getUserPermissions(this.user.id);
+
+        for (const permission of permissions) {
+            if (validatePermission(perm, permission)) return true;
+        }
+    }
 }
 
-export const socketsBySocketID = new Map<string, Socket>();
-(globalThis as any).socketsBySocketID = socketsBySocketID;
+export const socketsByUUID = new Map<Socket["uuid"], Socket>();
+// biome-ignore lint/suspicious/noExplicitAny: global access for console
+(globalThis as any).socketsByUUID = socketsByUUID;
 
 /**
  * Find a socket by their participant ID
@@ -819,8 +858,8 @@ export const socketsBySocketID = new Map<string, Socket>();
  * @returns Socket object
  **/
 export function findSocketByPartID(id: string) {
-    for (const socket of socketsBySocketID.values()) {
-        if (socket.getParticipantID() == id) return socket;
+    for (const socket of socketsByUUID.values()) {
+        if (socket.getParticipantID() === id) return socket;
     }
 }
 
@@ -833,9 +872,9 @@ export function findSocketByPartID(id: string) {
 export function findSocketsByUserID(_id: string) {
     const sockets = [];
 
-    for (const socket of socketsBySocketID.values()) {
+    for (const socket of socketsByUUID.values()) {
         // logger.debug("User ID:", socket.getUserID());
-        if (socket.getUserID() == _id) sockets.push(socket);
+        if (socket.getUserID() === _id) sockets.push(socket);
     }
 
     return sockets;
@@ -848,8 +887,8 @@ export function findSocketsByUserID(_id: string) {
  * @returns Socket object
  **/
 export function findSocketByIP(ip: string) {
-    for (const socket of socketsBySocketID.values()) {
-        if (socket.getIP() == ip) {
+    for (const socket of socketsByUUID.values()) {
+        if (socket.getIP() === ip) {
             return socket;
         }
     }

@@ -19,6 +19,7 @@ import { loadForcedStartupChannels } from "./channel/forceLoad";
 import { Logger } from "./util/Logger";
 // docker hates this next one
 import { startReadline } from "./util/readline";
+import { loadDefaultPermissions } from "./data/permission";
 
 // wrapper for some reason
 export function startServer() {
@@ -27,6 +28,8 @@ export function startServer() {
     const logger = new Logger("Main");
     logger.info("Forceloading startup channels...");
     loadForcedStartupChannels();
+
+    loadDefaultPermissions();
 
     // Break the console
     startReadline();

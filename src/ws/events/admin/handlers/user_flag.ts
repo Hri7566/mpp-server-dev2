@@ -12,8 +12,11 @@ export const user_flag: ServerEventListener<"user_flag"> = {
         // User flag modification (changing some real specific shit)
         if (typeof msg._id !== "string") return;
         if (typeof msg.key !== "string") return;
-        if (typeof msg.remove !== "boolean" && typeof msg.value == "undefined") {
-            return
+        if (
+            typeof msg.remove !== "boolean" &&
+            typeof msg.value == "undefined"
+        ) {
+            return;
         }
 
         // socket.getCurrentChannel()?.logger.debug(msg);
@@ -43,7 +46,5 @@ export const user_flag: ServerEventListener<"user_flag"> = {
         for (const ch of ChannelList.getList()) {
             ch.emit("user data update", user);
         }
-
-        // socket.getCurrentChannel()?.logger.debug("socks:", socks);
     }
 };

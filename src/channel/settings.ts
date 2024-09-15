@@ -1,4 +1,4 @@
-import { IChannelSettings } from "../util/types";
+import type { IChannelSettings } from "~/util/types";
 
 type Validator = "boolean" | "string" | "number" | ((val: unknown) => boolean);
 
@@ -40,11 +40,11 @@ const adminOnlyKeys = [
  */
 export function validateChannelSettings(set: Partial<IChannelSettings>, admin = false) {
     // Create record
-    let record: Partial<Record<keyof IChannelSettings, boolean>> = {};
+    const record: Partial<Record<keyof IChannelSettings, boolean>> = {};
 
     for (const key of Object.keys(set)) {
-        let val = (set as Record<string, any>)[key];
-        let validator = (
+        const val = (set as Record<string, unknown>)[key];
+        const validator = (
             validationRecord as Record<string, Validator | undefined>
         )[key];
 
@@ -66,12 +66,15 @@ export function validateChannelSettings(set: Partial<IChannelSettings>, admin = 
 
 export default validateChannelSettings;
 
-export function validate(value: any, validator: Validator) {
+export function validate(value: unknown, validator: Validator) {
     // What type of validator?
     if (typeof validator === "function") {
         // Run the function
         return validator(value) === true;
-    } else if (typeof value === validator) {
+    }
+
+    // biome-ignore lint/suspicious/useValidTypeof: biome is dumb
+    if (typeof value === validator) {
         return true;
     }
 

@@ -1,8 +1,10 @@
-import { Logger } from "../../../../util/Logger";
-import { getMOTD } from "../../../../util/motd";
-import { createToken, getToken, validateToken } from "../../../../util/token";
-import { ClientEvents, ServerEventListener } from "../../../../util/types";
-import { config } from "../../../usersConfig";
+import { getUserPermissions } from "~/data/permission";
+import { Logger } from "~/util/Logger";
+import { getMOTD } from "~/util/motd";
+import { createToken, getToken, validateToken } from "~/util/token";
+import type { ServerEventListener, ServerEvents } from "~/util/types";
+import type { Socket } from "~/ws/Socket";
+import { config, usersConfigPath } from "~/ws/usersConfig";
 
 const logger = new Logger("Hi handler");
 
@@ -16,7 +18,7 @@ export const hi: ServerEventListener<"hi"> = {
         if (socket.gateway.hasProcessedHi) return;
 
         // Browser challenge
-        if (config.browserChallenge == "basic") {
+        if (config.browserChallenge === "basic") {
             try {
                 if (typeof msg.code !== "string") return;
                 const code = atob(msg.code);
@@ -30,14 +32,21 @@ export const hi: ServerEventListener<"hi"> = {
                     }
                 }
             } catch (err) {
-                logger.warn("Unable to parse basic browser challenge code:", err);
+                logger.warn(
+                    "Unable to parse basic browser challenge code:",
+                    err
+                );
             }
-        } else if (config.browserChallenge == "obf") {
+        } else if (config.browserChallenge === "obf") {
             // TODO
         }
 
         // Is the browser challenge enabled and has the user completed it?
-        if (config.browserChallenge !== "none" && !socket.gateway.hasCompletedBrowserChallenge) return socket.ban(60000, "Browser challenge not completed");
+        if (
+            config.browserChallenge !== "none" &&
+            !socket.gateway.hasCompletedBrowserChallenge
+        )
+            return socket.ban(60000, "Browser challenge not completed");
 
         let token: string | undefined;
         let generatedToken = false;
@@ -50,18 +59,26 @@ export const hi: ServerEventListener<"hi"> = {
                 token = await getToken(socket.getUserID());
                 if (typeof token !== "string") {
                     // Generate a new one
-                    token = await createToken(socket.getUserID(), socket.gateway);
+                    token = await createToken(
+                        socket.getUserID(),
+                        socket.gateway
+                    );
                     socket.gateway.isTokenValid = true;
 
                     if (typeof token !== "string") {
-                        logger.warn(`Unable to generate token for user ${socket.getUserID()}`);
+                        logger.warn(
+                            `Unable to generate token for user ${socket.getUserID()}`
+                        );
                     } else {
                         generatedToken = true;
                     }
                 }
             } else {
                 // Validate the token
-                const valid = await validateToken(socket.getUserID(), msg.token);
+                const valid = await validateToken(
+                    socket.getUserID(),
+                    msg.token
+                );
                 if (!valid) {
                     //socket.ban(60000, "Invalid token");
                     //return;
@@ -86,20 +103,27 @@ export const hi: ServerEventListener<"hi"> = {
 
         //logger.debug("Tag:", part.tag);
 
-        socket.sendArray([{
-            m: "hi",
-            accountInfo: undefined,
-            permissions: undefined,
-            t: Date.now(),
-            u: {
-                _id: part._id,
-                color: part.color,
-                name: part.name,
-                tag: part.tag
-            },
-            motd: getMOTD(),
-            token
-        }]);
+        const permissions: Record<string, boolean> = {};
+        (await getUserPermissions(socket.getUserID())).map(perm => {
+            permissions[perm] = true;
+        });
+
+        socket.sendArray([
+            {
+                m: "hi",
+                accountInfo: undefined,
+                permissions,
+                t: Date.now(),
+                u: {
+                    _id: part._id,
+                    color: part.color,
+                    name: part.name,
+                    tag: config.enableTags ? part.tag : undefined
+                },
+                motd: getMOTD(),
+                token
+            }
+        ]);
 
         socket.gateway.hasProcessedHi = true;
     }

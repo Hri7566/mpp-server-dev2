@@ -7,8 +7,8 @@ node_modules
 # SQLite databases
 prisma/*.sqlite
 
-# TS build
-/out
+# Build script output
+/dist
 
 # JWT token keypair
 mppkey

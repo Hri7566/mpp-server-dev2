@@ -1,6 +1,6 @@
 import { readUser, updateUser } from "../../../../data/user";
 import { ServerEventListener } from "../../../../util/types";
-import { findSocketsByUserID, socketsBySocketID } from "../../../Socket";
+import { findSocketsByUserID, socketsByUUID } from "../../../Socket";
 
 let timeout: Timer;
 
@@ -13,7 +13,7 @@ export const restart: ServerEventListener<"restart"> = {
         }
 
         // Let everyone know
-        for (const sock of socketsBySocketID.values()) {
+        for (const sock of socketsByUUID.values()) {
             sock.sendNotification({
                 id: "server-restart",
                 target: "#piano",

@@ -1,13 +1,13 @@
 import { Logger } from "../util/Logger";
 import { createSocketID, createUserID } from "../util/id";
-import fs from "fs";
-import path from "path";
+import fs from "node:fs";
+import path from "node:path";
 import { handleMessage } from "./message";
-import { Socket, socketsBySocketID } from "./Socket";
+import { Socket, socketsByUUID } from "./Socket";
 import env from "../util/env";
 import { getMOTD } from "../util/motd";
 import nunjucks from "nunjucks";
-import { metrics } from "../util/metrics";
+import type { ServerWebSocket } from "bun";
 
 const logger = new Logger("WebSocket Server");
 
@@ -37,6 +37,8 @@ async function getIndex() {
 
     return response;
 }
+
+type ServerWebSocketMPP = ServerWebSocket<{ ip: string, socket: Socket }>
 
 export const app = Bun.serve<{ ip: string }>({
     port: env.PORT,
@@ -78,31 +80,31 @@ export const app = Bun.serve<{ ip: string }>({
                 // Return the file
                 if (data) {
                     return new Response(data);
-                } else {
-                    return getIndex();
                 }
-            } else {
-                // Return the index file, since it's a channel name or something
+                
                 return getIndex();
             }
+
+            // Return the index file, since it's a channel name or something
+            return getIndex();
         } catch (err) {
             // Return the index file as a coverup of our extreme failure
             return getIndex();
         }
     },
     websocket: {
-        open: ws => {
+        open: (ws: ServerWebSocketMPP) => {
             // swimming in the pool
             const socket = new Socket(ws, createSocketID());
 
-            (ws as unknown as any).socket = socket;
+            ws.data.socket = socket;
             // logger.debug("Connection at " + socket.getIP());
 
-            if (socket.socketID == undefined) {
+            if (socket.socketID === undefined) {
                 socket.socketID = createSocketID();
             }
 
-            socketsBySocketID.set(socket.socketID, socket);
+            socketsByUUID.set(socket.getUUID(), socket);
 
             const ip = socket.getIP();
 
@@ -121,29 +123,29 @@ export const app = Bun.serve<{ ip: string }>({
             }
         },
 
-        message: (ws, message) => {
+        message: (ws: ServerWebSocketMPP, message: string) => {
             // Fucking string
             const msg = message.toString();
 
             // Let's find out wtf they even sent
-            handleMessage((ws as unknown as any).socket, msg);
+            handleMessage(ws.data.socket, msg);
         },
 
-        close: (ws, code, message) => {
+        close: (ws: ServerWebSocketMPP, code, message) => {
             // This usually gets called when someone leaves,
             // but it's also used internally just in case
             // some dickhead can't close their tab like a
             // normal person.
 
-            const socket = (ws as unknown as any).socket as Socket;
+            const socket = ws.data.socket as Socket;
             if (socket) {
                 socket.destroy();
 
-                for (const sockID of socketsBySocketID.keys()) {
-                    const sock = socketsBySocketID.get(sockID);
+                for (const sockID of socketsByUUID.keys()) {
+                    const sock = socketsByUUID.get(sockID);
 
-                    if (sock == socket) {
-                        socketsBySocketID.delete(sockID);
+                    if (sock === socket) {
+                        socketsByUUID.delete(sockID);
                     }
                 }
             }

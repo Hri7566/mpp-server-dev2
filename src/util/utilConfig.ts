@@ -1,5 +1,5 @@
-import { loadConfig } from "./config";
+import { ConfigManager } from "./config";
 
-export const config = loadConfig("config/util.yml", {
+export const config = ConfigManager.loadConfig("config/util.yml", {
     enableLogFiles: true
 });

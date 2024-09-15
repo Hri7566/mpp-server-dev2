@@ -27,8 +27,19 @@ model ChatHistory {
 }
 
 model Channel {
-  id        String @id @unique @map("_id")
-  settings  String @default("{}") // JSON channel settings
+  id        String  @id @unique @map("_id")
+  settings  String  @default("{}") // JSON channel settings
   forceload Boolean @default(false) // Whether the channel is forceloaded
-  flags     String @default("{}") // JSON flags object
+  flags     String  @default("{}") // JSON flags object
+}
+
+model Role {
+  userId String @unique
+  roleId String
+}
+
+model RolePermission {
+  id         Int    @id @unique @default(autoincrement())
+  roleId     String
+  permission String
 }

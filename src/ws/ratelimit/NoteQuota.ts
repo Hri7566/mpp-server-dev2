@@ -35,15 +35,15 @@ export class NoteQuota {
         params: {
             allowance: number;
             max: number;
-            maxHistLen: number;
+            maxHistLen?: number;
         } = NoteQuota.PARAMS_OFFLINE
     ) {
-        let allowance: number =
+        const allowance: number =
             params.allowance ||
             this.allowance ||
             NoteQuota.PARAMS_OFFLINE.allowance;
-        let max = params.max || this.max || NoteQuota.PARAMS_OFFLINE.max;
-        let maxHistLen =
+        const max = params.max || this.max || NoteQuota.PARAMS_OFFLINE.max;
+        const maxHistLen =
             params.maxHistLen ||
             this.maxHistLen ||
             NoteQuota.PARAMS_OFFLINE.maxHistLen;
@@ -90,19 +90,18 @@ export class NoteQuota {
 
     public spend(needed: number) {
         let sum = 0;
+        let numNeeded = needed;
 
         for (const i in this.history) {
             sum += this.history[i];
         }
 
-        if (sum <= 0) needed *= this.allowance;
+        if (sum <= 0) numNeeded *= this.allowance;
+        if (this.points < numNeeded) return false;
 
-        if (this.points < needed) {
-            return false;
-        } else {
-            this.points -= needed;
-            if (this.cb) this.cb(this.points);
-            return true;
-        }
+        this.points -= numNeeded;
+        if (this.cb) this.cb(this.points);
+
+        return true;
     }
 }

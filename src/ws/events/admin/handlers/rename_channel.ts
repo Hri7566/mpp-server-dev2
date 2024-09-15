@@ -1,6 +1,6 @@
 import { ChannelList } from "../../../../channel/ChannelList";
 import { ServerEventListener } from "../../../../util/types";
-import { socketsBySocketID } from "../../../Socket";
+import { socketsByUUID } from "../../../Socket";
 
 export const rename_channel: ServerEventListener<"rename_channel"> = {
     id: "rename_channel",
@@ -39,7 +39,7 @@ export const rename_channel: ServerEventListener<"rename_channel"> = {
             }
         }
 
-        for (const sock of socketsBySocketID.values()) {
+        for (const sock of socketsByUUID.values()) {
             // Are they in this channel?
             if (sock.currentChannelID !== oldID) continue;
             // Move them forcefully
