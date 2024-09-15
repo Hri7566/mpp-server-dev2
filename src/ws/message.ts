@@ -14,7 +14,7 @@ export function handleMessage(socket: Socket, text: string) {
             logger.warn(
                 "Received message that isn't an array! --",
                 transmission,
-                " -- from",
+                "-- from",
                 socket.getUserID()
             );
         } else {

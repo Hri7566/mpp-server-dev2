@@ -231,6 +231,18 @@ declare interface ServerEvents {
         name: string;
     };
 
+    setcolor: {
+        m: "setcolor";
+        _id: string;
+        color: string;
+    };
+
+    setname: {
+        m: "setname";
+        _id: string;
+        color: string;
+    };
+
     user_flag: {
         m: "user_flag";
         _id: string;

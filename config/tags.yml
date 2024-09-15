@@ -1,0 +1,18 @@
+admin:
+    text: ADMIN
+    color: "#ff5555"
+trialmod:
+    text: TRIAL MOD
+    color: "#ffbb00"
+mod:
+    text: MOD
+    color: "#00aa00"
+media:
+    text: MEDIA
+    color: "#ff55ff"
+bot:
+    text: BOT
+    color: "#5555ff"
+owner:
+    text: OWNER
+    color: "#aa0000"

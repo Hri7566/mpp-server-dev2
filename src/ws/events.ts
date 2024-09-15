@@ -1,18 +1,18 @@
-import type { ServerEventListener, ServerEvents } from "../util/types";
+import type { EventID, ServerEventListener, ServerEvents } from "../util/types";
 
 export class EventGroup {
-    public eventList = new Array<ServerEventListener<keyof ServerEvents>>();
+    public eventList = new Array<ServerEventListener<any>>();
     constructor(public id: string) {}
 
-    public add(listener: ServerEventListener<keyof ServerEvents>) {
+    public add(listener: ServerEventListener<any>) {
         this.eventList.push(listener);
     }
 
-    public addMany(...listeners: ServerEventListener<keyof ServerEvents>[]) {
+    public addMany(...listeners: ServerEventListener<any>[]) {
         for (const l of listeners) this.add(l);
     }
 
-    public remove(listener: ServerEventListener<keyof ServerEvents>) {
+    public remove(listener: ServerEventListener<any>) {
         this.eventList.splice(this.eventList.indexOf(listener), 1);
     }
 }

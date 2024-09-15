@@ -1,4 +1,4 @@
-import { getUserPermissions } from "~/data/permission";
+import { getUserPermissions } from "~/data/permissions";
 import { Logger } from "~/util/Logger";
 import { getMOTD } from "~/util/motd";
 import { createToken, getToken, validateToken } from "~/util/token";

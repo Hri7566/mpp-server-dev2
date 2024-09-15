@@ -29,7 +29,7 @@ export async function giveRole(userId: string, roleId: string) {
 }
 
 export async function removeRole(userId: string, roleId: string) {
-    return await prisma.role.delete({
+    return await prisma.role.deleteMany({
         where: {
             userId,
             roleId

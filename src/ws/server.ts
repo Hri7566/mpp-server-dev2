@@ -8,12 +8,25 @@ import env from "../util/env";
 import { getMOTD } from "../util/motd";
 import nunjucks from "nunjucks";
 import type { ServerWebSocket } from "bun";
+import { ConfigManager } from "~/util/config";
+import { config as usersConfig } from "./usersConfig";
 
 const logger = new Logger("WebSocket Server");
 
 // ip -> timestamp
 // for checking if they visited the site and are also connected to the websocket
 const httpIpCache = new Map<string, number>();
+
+interface IFrontendConfig {
+    topButtons: "original" | "none";
+}
+
+const config = ConfigManager.loadConfig<IFrontendConfig>(
+    "config/frontend.yml",
+    {
+        topButtons: "original"
+    }
+);
 
 /**
  * Get a rendered version of the index file
@@ -29,7 +42,9 @@ async function getIndex() {
     const index = Bun.file("./public/index.html");
 
     const rendered = nunjucks.renderString(await index.text(), {
-        motd: getMOTD()
+        motd: getMOTD(),
+        config,
+        usersConfig
     });
 
     const response = new Response(rendered);
@@ -38,7 +53,7 @@ async function getIndex() {
     return response;
 }
 
-type ServerWebSocketMPP = ServerWebSocket<{ ip: string, socket: Socket }>
+type ServerWebSocketMPP = ServerWebSocket<{ ip: string; socket: Socket }>;
 
 export const app = Bun.serve<{ ip: string }>({
     port: env.PORT,
@@ -81,7 +96,7 @@ export const app = Bun.serve<{ ip: string }>({
                 if (data) {
                     return new Response(data);
                 }
-                
+
                 return getIndex();
             }
 

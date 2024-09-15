@@ -19,7 +19,7 @@ import { loadForcedStartupChannels } from "./channel/forceLoad";
 import { Logger } from "./util/Logger";
 // docker hates this next one
 import { startReadline } from "./util/readline";
-import { loadDefaultPermissions } from "./data/permission";
+import { loadDefaultPermissions } from "./data/permissions";
 
 // wrapper for some reason
 export function startServer() {

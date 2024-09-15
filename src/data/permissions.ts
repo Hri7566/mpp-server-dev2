@@ -15,7 +15,8 @@ export const config = ConfigManager.loadConfig<Record<string, string[]>>(
             "usersetOthers",
             "siteBan",
             "siteBanAnyReason",
-            "siteBanAnyDuration"
+            "siteBanAnyDuration",
+            "event.admin.*"
         ]
     }
 );

@@ -321,6 +321,7 @@ export class Channel extends EventEmitter {
 
         this.on("user data update", (user: User) => {
             try {
+                if (!this.ppl.map(p => p._id).includes(user.id)) return;
                 if (typeof user.name !== "string") return;
                 if (typeof user.color !== "string") return;
                 if (typeof user.id !== "string") return;

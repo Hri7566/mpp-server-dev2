@@ -8,7 +8,8 @@ import {
     loadDefaultPermissions,
     removeAllRolePermissions,
     removeRolePermission
-} from "~/data/permission";
+} from "~/data/permissions";
+import { builtinTags, removeTag, setBuiltinTag } from "../tags";
 
 Command.addCommand(
     new Command(["help", "h", "commands", "cmds"], "help", msg => {
@@ -94,11 +95,19 @@ Command.addCommand(
 
             if (msg.args[1] === "add") {
                 if (!msg.args[3]) return "No role id provided";
+
                 await giveRole(msg.args[2], msg.args[3]);
+                await setBuiltinTag(msg.args[2], msg.args[3]);
+
                 return `Gave user ${msg.args[2]} role ${msg.args[3]}`;
             } else if (msg.args[1] === "remove") {
                 if (!msg.args[3]) return "No role id provided";
                 await removeRole(msg.args[2], msg.args[3]);
+
+                if (Object.keys(builtinTags).includes(msg.args[3])) {
+                    await removeTag(msg.args[2]);
+                }
+
                 return `Removed role ${msg.args[3]} from ${msg.args[2]}`;
             } else if (msg.args[1] === "list") {
                 const roles = await getRoles(msg.args[2]);

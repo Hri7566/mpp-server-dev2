@@ -41,8 +41,9 @@ import {
     getUserPermissions,
     hasPermission,
     validatePermission
-} from "~/data/permission";
+} from "~/data/permissions";
 import { getRoles } from "~/data/role";
+import { setTag } from "~/util/tags";
 
 const logger = new Logger("Sockets");
 
@@ -792,10 +793,8 @@ export class Socket extends EventEmitter {
      **/
     public setTag(text: string, color: string) {
         //logger.debug("Setting tag:", text, color);
-        const user = this.getUser();
-        if (!user) return;
-        user.tag = JSON.stringify({ text, color });
-        updateUser(this.getUserID(), user);
+        if (!this.user) return;
+        setTag(this.user.id, { text, color });
     }
 
     /**
@@ -836,6 +835,11 @@ export class Socket extends EventEmitter {
         });
     }
 
+    /**
+     * Check if this socket has a given permission
+     * @param perm Permission string
+     * @returns Whether this socket has the given permission
+     */
     public async hasPermission(perm: string) {
         if (!this.user) return false;
 
@@ -844,6 +848,8 @@ export class Socket extends EventEmitter {
         for (const permission of permissions) {
             if (validatePermission(perm, permission)) return true;
         }
+
+        return false;
     }
 }
 
