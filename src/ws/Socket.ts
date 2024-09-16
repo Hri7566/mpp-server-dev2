@@ -391,7 +391,8 @@ export class Socket extends EventEmitter {
             let tag: Tag | undefined;
 
             try {
-                tag = JSON.parse(this.user.tag) as Tag;
+                if (typeof this.user.tag === "string")
+                    tag = JSON.parse(this.user.tag) as Tag;
             } catch (err) {}
 
             return {

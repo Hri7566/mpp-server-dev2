@@ -19,12 +19,16 @@ const httpIpCache = new Map<string, number>();
 
 interface IFrontendConfig {
     topButtons: "original" | "none";
+    disableChat: boolean;
+    winter: boolean;
 }
 
 const config = ConfigManager.loadConfig<IFrontendConfig>(
     "config/frontend.yml",
     {
-        topButtons: "original"
+        topButtons: "original",
+        disableChat: false,
+        winter: false
     }
 );
 
