@@ -1,10 +1,17 @@
 import { Socket } from "../../../Socket";
-import { ServerEventListener, ServerEvents } from "../../../../util/types";
+import {
+    ServerEventListener,
+    IncomingSocketEvents
+} from "../../../../util/types";
 
 // https://stackoverflow.com/questions/64509631/is-there-a-regex-to-match-all-unicode-emojis
-const emojiRegex = /(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/g;
+const emojiRegex =
+    /(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/g;
 
-function populateSocketChatGatewayFlags(msg: ServerEvents["a"], socket: Socket) {
+function populateSocketChatGatewayFlags(
+    msg: IncomingSocketEvents["a"],
+    socket: Socket
+) {
     socket.gateway.hasSentChatMessage = true;
 
     if (msg.message.toUpperCase() == msg.message) {

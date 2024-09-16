@@ -1,11 +1,10 @@
 import EventEmitter from "events";
 import { Logger } from "../util/Logger";
 import type {
-    ChannelSettingValue,
     IChannelSettings,
-    ClientEvents,
+    OutgoingSocketEvents,
     Participant,
-    ServerEvents,
+    IncomingSocketEvents,
     IChannelInfo,
     Notification,
     UserFlags,
@@ -57,7 +56,7 @@ export class Channel extends EventEmitter {
     private settings: Partial<IChannelSettings>;
     private ppl = new Array<ExtraPart>();
 
-    public chatHistory = new Array<ClientEvents["a"]>();
+    public chatHistory = new Array<OutgoingSocketEvents["a"]>();
 
     private async loadChatHistory() {
         try {
@@ -242,7 +241,7 @@ export class Channel extends EventEmitter {
 
         const BANNED_WORDS = ["AMIGHTYWIND", "CHECKLYHQ"];
 
-        this.on("a", async (msg: ServerEvents["a"], socket: Socket) => {
+        this.on("a", async (msg: IncomingSocketEvents["a"], socket: Socket) => {
             try {
                 if (typeof msg.message !== "string") return;
 
@@ -284,7 +283,7 @@ export class Channel extends EventEmitter {
 
                 const part = socket.getParticipant() as Participant;
 
-                const outgoing: ClientEvents["a"] = {
+                const outgoing: OutgoingSocketEvents["a"] = {
                     m: "a",
                     a: msg.message,
                     t: Date.now(),
@@ -847,8 +846,8 @@ export class Channel extends EventEmitter {
      * Send messages to everyone in this channel
      * @param arr List of events to send to clients
      */
-    public sendArray<EventID extends keyof ClientEvents>(
-        arr: ClientEvents[EventID][],
+    public sendArray<EventID extends keyof OutgoingSocketEvents>(
+        arr: OutgoingSocketEvents[EventID][],
         blockPartID?: string
     ) {
         const sentSocketIDs = new Array<string>();
@@ -875,7 +874,7 @@ export class Channel extends EventEmitter {
      * @param socket Socket that is sending notes
      * @returns undefined
      */
-    public playNotes(msg: ServerEvents["n"], socket?: Socket) {
+    public playNotes(msg: IncomingSocketEvents["n"], socket?: Socket) {
         if (this.isDestroyed()) return;
         let pianoPartID = usersConfig.adminParticipant.id;
 
@@ -885,7 +884,7 @@ export class Channel extends EventEmitter {
             pianoPartID = part.id;
         }
 
-        const clientMsg: ClientEvents["n"] = {
+        const clientMsg: OutgoingSocketEvents["n"] = {
             m: "n",
             n: msg.n,
             t: msg.t,
@@ -1230,7 +1229,7 @@ export class Channel extends EventEmitter {
      * @param msg Chat message event to send
      * @param p Participant who is "sending the message"
      **/
-    public async sendChat(msg: ServerEvents["a"], p: Participant) {
+    public async sendChat(msg: IncomingSocketEvents["a"], p: Participant) {
         if (!msg.message) return;
 
         if (msg.message.length > 512) return;
@@ -1241,7 +1240,7 @@ export class Channel extends EventEmitter {
             .replace(/(\p{Mc}{5})\p{Mc}+/gu, "$1")
             .trim();
 
-        const outgoing: ClientEvents["a"] = {
+        const outgoing: OutgoingSocketEvents["a"] = {
             m: "a",
             a: msg.message,
             t: Date.now(),

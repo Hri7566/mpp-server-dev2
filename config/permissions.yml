@@ -1,3 +1,13 @@
+owner:
+    - clearChat
+    - vanish
+    - chsetAnywhere
+    - chownAnywhere
+    - usersetOthers
+    - siteBan
+    - siteBanAnyReason
+    - siteBanAnyDuration
+
 admin:
     - clearChat
     - vanish
@@ -7,3 +17,19 @@ admin:
     - siteBan
     - siteBanAnyReason
     - siteBanAnyDuration
+
+mod:
+    - clearChat
+    - vanish
+    - chsetAnywhere
+    - chownAnywhere
+    - usersetOthers
+    - siteBan
+    - siteBanAnyReason
+
+trialmod:
+    - clearChat
+    - vanish
+    - chsetAnywhere
+    - chownAnywhere
+    - siteBan

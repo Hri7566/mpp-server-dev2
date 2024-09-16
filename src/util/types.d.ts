@@ -107,7 +107,7 @@ declare interface Crown {
     endPos: Vector2;
 }
 
-declare interface ServerEvents {
+declare interface IncomingSocketEvents {
     hi: {
         m: "hi";
         token?: string;
@@ -209,7 +209,7 @@ declare interface ServerEvents {
     "admin message": {
         m: "admin message";
         password: string;
-        msg: ServerEvents[keyof ServerEvents];
+        msg: IncomingSocketEvents[keyof IncomingSocketEvents];
     };
 
     b: {
@@ -310,7 +310,7 @@ declare interface ServerEvents {
     };
 }
 
-declare interface ClientEvents {
+declare interface OutgoingSocketEvents {
     a: {
         m: "a";
         a: string;
@@ -407,11 +407,11 @@ declare interface ClientEvents {
     };
 }
 
-type EventID = ServerEvents[keyof ServerEvents]["m"];
+type EventID = IncomingSocketEvents[keyof IncomingSocketEvents]["m"];
 
 declare type ServerEventListener<E extends EventID> = {
     id: E;
-    callback: (msg: ServerEvents[E], socket: Socket) => Promise<void>;
+    callback: (msg: IncomingSocketEvents[E], socket: Socket) => Promise<void>;
 };
 
 declare type Vector2<T = number> = {

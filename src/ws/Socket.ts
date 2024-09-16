@@ -9,9 +9,9 @@ import EventEmitter from "events";
 import type {
     IChannelInfo,
     IChannelSettings,
-    ClientEvents,
+    OutgoingSocketEvents,
     Participant,
-    ServerEvents,
+    IncomingSocketEvents,
     UserFlags,
     Vector2,
     Notification,
@@ -295,8 +295,8 @@ export class Socket extends EventEmitter {
      * Send this socket an array of messages
      * @param arr Array of messages to send
      **/
-    public sendArray<EventID extends keyof ClientEvents>(
-        arr: ClientEvents[EventID][]
+    public sendArray<EventID extends keyof OutgoingSocketEvents>(
+        arr: OutgoingSocketEvents[EventID][]
     ) {
         if (this.isDestroyed() || !this.ws) return;
         this.ws.send(JSON.stringify(arr));
@@ -646,7 +646,7 @@ export class Socket extends EventEmitter {
      * Make this socket play a note in the channel they are in
      * @param msg Note message from client
      **/
-    public playNotes(msg: ServerEvents["n"]) {
+    public playNotes(msg: IncomingSocketEvents["n"]) {
         const ch = this.getCurrentChannel();
         if (!ch) return;
         ch.playNotes(msg, this);

@@ -66,27 +66,27 @@ This has always been the future intention of this project.
 
 ## TODO
 
-- Change `socketsBySocketID` to `socketsByUUID`
-- Channel data saving
-- Permission groups and permissions
-    - Probable permission groups: owner, admin, mod, trialmod, default
-    - Setup tags for each permission group
-- MPP.com data message
+- [ ] Channel data saving (I forget what this means)
+- [ ] Token generation
+- [ ] Permission groups and permissions
+    - [x] Probable permission groups: owner, admin, mod, trialmod, default
+    - [ ] Setup tags for each permission group
+- [ ] MPP.com data message
     - Implement based on `spooky.js` given there is no official documentation
-- No cussing setting
-- Full server-wide event bus
-    - Channel events
-    - Socket events
-    - User data events
-    - Permission-related events
-- Redo ratelimits
-- Redo all of the validations with Zod
+- [ ] No cussing setting
+- [ ] Full server-wide event bus
+    - [ ] Channel events
+    - [ ] Socket events
+    - [ ] User data events
+    - [ ] Permission-related events
+- [ ] Redo ratelimits
+- [ ] Redo all of the validations with Zod
     - This probably means making Zod schemas for every single message type
     - Also user and channel data
-- Test every frontend
-- Test fishing bot
-- Remote console
-- Modify frontend to use templating
+- [ ] Test every frontend
+- [ ] Test fishing bot
+- [ ] Remote console
+- [ ] Modify frontend to use templating
 
 ## Backlog/Notes
 

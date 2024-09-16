@@ -2,7 +2,7 @@ import { getUserPermissions } from "~/data/permissions";
 import { Logger } from "~/util/Logger";
 import { getMOTD } from "~/util/motd";
 import { createToken, getToken, validateToken } from "~/util/token";
-import type { ServerEventListener, ServerEvents } from "~/util/types";
+import type { ServerEventListener, IncomingSocketEvents } from "~/util/types";
 import type { Socket } from "~/ws/Socket";
 import { config, usersConfigPath } from "~/ws/usersConfig";
 

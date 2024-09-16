@@ -1,4 +1,8 @@
-import type { EventID, ServerEventListener, ServerEvents } from "../util/types";
+import type {
+    EventID,
+    ServerEventListener,
+    IncomingSocketEvents
+} from "../util/types";
 
 export class EventGroup {
     public eventList = new Array<ServerEventListener<any>>();
