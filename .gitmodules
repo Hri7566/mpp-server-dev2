@@ -1,9 +1,0 @@
-[submodule "public"]
-	path = public
-	url = git@git.hri7566.info:Hri7566/mpp-frontend-dev
-[submodule "public/sounds"]
-	path = public/sounds
-	url = git@git.hri7566.info:Hri7566/piano-sounds-dev
-[submodule "public/sounds/mppclassic"]
-	path = public/sounds/mppclassic
-	url = git@git.hri7566.info:Hri7566/mppclassic
