@@ -70,7 +70,7 @@ This has always been the future intention of this project.
 - [ ] Token generation
 - [ ] Permission groups and permissions
     - [x] Probable permission groups: owner, admin, mod, trialmod, default
-    - [ ] Setup tags for each permission group
+    - [x] Setup tags for each permission group
 - [ ] MPP.com data message
     - Implement based on `spooky.js` given there is no official documentation
 - [ ] No cussing setting
