@@ -1,5 +1,5 @@
 import { ChannelList } from "../../../../channel/ChannelList";
-import { ServerEventListener } from "../../../../util/types";
+import { ServerEventListener, TChannelFlags } from "../../../../util/types";
 
 export const ch_flag: ServerEventListener<"ch_flag"> = {
     id: "ch_flag",
@@ -14,9 +14,15 @@ export const ch_flag: ServerEventListener<"ch_flag"> = {
             chid = ch.getID();
         }
 
+        if (typeof msg.key !== "string") return;
+        if (typeof msg.value === "undefined") return;
+
         const ch = ChannelList.getList().find(c => c.getID() == chid);
         if (!ch) return;
 
-        ch.setFlag(msg.key, msg.value);
+        ch.setFlag(
+            msg.key as keyof TChannelFlags,
+            msg.value as TChannelFlags[keyof TChannelFlags]
+        );
     }
 };

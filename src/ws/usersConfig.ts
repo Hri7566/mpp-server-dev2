@@ -1,5 +1,5 @@
 import { ConfigManager } from "../util/config";
-import type { Participant, UserFlags } from "../util/types";
+import type { IParticipant, UserFlags } from "../util/types";
 
 export interface UsersConfig {
     defaultName: string;
@@ -7,7 +7,7 @@ export interface UsersConfig {
     enableColorChanging: boolean;
     enableCustomNoteData: boolean;
     enableTags: boolean;
-    adminParticipant: Participant;
+    adminParticipant: IParticipant;
     enableAdminEval: boolean;
     tokenAuth: "jwt" | "uuid" | "none";
     browserChallenge: "none" | "obf" | "basic";

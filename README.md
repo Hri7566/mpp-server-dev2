@@ -63,6 +63,12 @@ This has always been the future intention of this project.
     - Ability to rename channels
     - Chat clearing similar to MPP.net
     - Channel forceloading message
+- YAML configs
+  - Automatic reloading of configs during runtime via file watching
+  - Interfacing handled by JS Proxy objects
+- Templating on frontend
+  - Handles changing things on page based on config
+  - Requires the use of `mpp-frontend-dev` to function properly
 
 ## TODO
 
@@ -119,60 +125,69 @@ Don't expect these instructions to stay the same. They might not even be up to d
     $ curl -fsSL https://bun.sh/install | bash
     ```
 
-1. Clone the repo and setup Git submodules
+1. Clone the repository and setup Git submodules
 
-This step is subject to change, due to the necessity of testing different frontends, where the frontend may or may not be a git submodule.
-This will probably be updated in the near future. Expect a step asking to download the frontend manually.
-If you are forking this repository, you can just setup a new submodule for the frontend.
-The frontend files go in the `public` folder.
+If you are forking this repository, you can just setup a new submodule for the frontend, **however, templating will likely not function properly.**
+If you would like to use a different repository for the frontend, the files go in the `public` folder.
 
-I am also considering using handlebars or something similar for templating, where the frontend will require completely different code.
-The reason behind this decision is that I would like different things to change on the frontend based on the server's config files,
-such as enabling the color changing option in the userset modal menu, or sending separate code to server admins/mods/webmasters.
+However, if you would like the templating features and want the frontend to change based on the server's configuration, setting up git submodules is required for full compatability.
 
+- Clone the repository
 
     ```
     $ git clone https://git.hri7566.info/Hri7566/mpp-server-dev2
+    ```
+
+- Setup git submodules
+
+    ```
     $ cd mpp-server-dev2
     $ git submodule update --init --recursive
     ```
 
 2. Configure
 
-    - Copy environment variables
+    - Copy default environment variables
 
     ```
     $ cp .env.template .env
     ```
 
-    Edit `.env` to your needs. Some variables are required for certain features to work.
+    Edit `.env` to your needs. Some variables are required for certain features to work. Most of this is self-explanatory if you have set up other large projects.
+    - `DATABASE_URL`: Database URI for prisma to connect to (as of right now, this is required to be a sqlite path)
+    - `PORT`: TCP port the HTTP/WS server will run on
+    - `ADMIN_PASS`: Admin password for the server
+    - `SALT`: Hashing salt for creating general-purpose IDs/user IDs
+    - `COLOR_SALT`: Hashing salt for creating user colors
 
     - Edit the files in the `config` folder to match your needs
 
-    For token auth, there are a few options to consider. In `config/users.yml`, you can set `tokenAuth` to a few different values:
+    For token authentication, there are a few options to consider. In `config/users.yml`, you can set `tokenAuth` to a few different values:
 
     - `jwt`: Use JWT token authentication
     - `uuid`: Use UUID token authentication
     - `none`: Disable token authentication
 
-    If you are using UUID token authentication, the server will generate a UUID token for each user when they first connect.
+    If you are using UUID token authentication, the server will generate a UUID token for each user when they first connect. This option is relatively simple and could be considered less secure.
 
-    If you are using JWT token authentication, you will need to generate a key for the server to use.
-    This can be done by running the following command:
+    If you are using JWT token authentication, the server will generate a JSON Web Token for each user when they first connect.
+    You will need to generate a key in the file `mppkey` for the server to use.
+    This can be done by running the following command, given `openssl` is installed:
 
     ```
     $ openssl genrsa -out mppkey 2048
     ```
 
-    For antibot/browser detection there are also a few options to consider. In `config/users.yml`, you can set `browserChallenge` to a few different values:
+    For antibot/browser detection there are also a few options to consider.
+    In `config/users.yml`, you can set `browserChallenge` to a few different values:
 
     - `none`: Disable browser challenge
     - `basic`: Use a simple function to detect browsers
-    - `obf`: Use an obfuscated function to detect browsers - TODO: implement this
+    - `obf`: Use an obfuscated function to detect browsers - this is not implemented as of yet
 
     The `basic` option only sends a simple function to the client, and the `obf` option sends an obfuscated mess to the client.
 
-    This option requires the newer-style (MPP.net) frontend to be used.
+    Token authentication is only supported on most frontends newer than 2020.
 
 3. Install packages
 
@@ -195,7 +210,7 @@ such as enabling the color changing option in the userset modal menu, or sending
 
 ## Background Info on Feature Implementation Decisions
 
-To avoid various controversies or confusion, I will attempt to explain why certain features were implemented in this section.
+To avoid various controversies or mass confusion, I will attempt to explain why certain features were implemented in this section.
 
 ### General Explanation
 
@@ -228,7 +243,7 @@ My fork was hosted at `mpp.hri7566.info`.
 Also around 2019-2020, I helped Foonix create a server known then as multiplayerpiano.net, hosted at `multiplayerpiano.net`.
 This server was heavily based on my fork of BopItFreak's server, but it slightly diverged when I added features to each site.
 The site was renamed to `multiplayerpiano.dev` due to lack of care for domain maintenance on Foonix's part.
-**This is where the `dev` in the name of this project comes from.**
+**Since the original server for this site was called `mpp-server-dev`, this is where the `dev2` in the name of this project comes from.**
 
 In August 2020, a server was developed by a user named aeiou (now known as LapisHusky) called MPPClone, hosted at `mppclone.com`.
 This server was eventually handed off to multiple other users, and is still up and running to this day at `multiplayerpiano.net`.

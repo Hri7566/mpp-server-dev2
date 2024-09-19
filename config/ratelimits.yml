@@ -1,44 +1,33 @@
-# Rate limit config file
-
-# Difference between rate limits and rate limit chains:
-# Rate limits will not allow anything to be sent until the rate limit interval has passed.
-# Rate limit chains, on the other hand, will allow messages to be sent until the rate limit chain's limit has been reached.
-# This is useful for rate limiting messages that are sent in rapid succession, like note messages.
-# This is also the basis for note quota, however that is handled in a separate way due to the way it is implemented.
-
-# Rate limits for normal users.
 user:
-    # Rate limits
     normal:
-        a: 1500 # Chat messages
-        m: 50 # Cursor messages
-        ch: 1000 # Channel join messages
-        kickban: 125 # Kickban messages
-        unban: 125 # Unban messages
-        t: 7.8125 # Ping messages
-        +ls: 16.666666666666668 # Channel list subscription messages
-        -ls: 16.666666666666668 # Channel list unsubscription messages
-        chown: 2000 # Channel ownership messages
-        hi: 50 # Handshake messages
-        bye: 50 # Disconnection messages
-        devices: 50 # MIDI device messages
-        admin message: 50 # Admin passthrough messages
-
-    # Rate limit chains
+        a: 1500
+        m: 50
+        ch: 1000
+        kickban: 125
+        unban: 125
+        t: 7.8125
+        +ls: 16.666666666666668
+        -ls: 16.666666666666668
+        chown: 2000
+        hi: 50
+        bye: 50
+        devices: 50
+        admin message: 50
+        +custom: 16.666666666666668
+        -custom: 16.666666666666668
     chains:
-        userset: # Username/color update messages
+        userset:
             interval: 1800000
             num: 1000
-        chset: # Channel settings messages
+        chset:
             interval: 1800000
             num: 1024
-        n: # Note messages
-            # TODO is this correct?
+        n:
             interval: 1000
             num: 512
-
-# The other rate limits are like the above messages, but for other types of users.
-# Rate limits for users with a crown.
+        custom:
+            interval: 1000
+            num: 512
 crown:
     normal:
         a: 600
@@ -54,6 +43,8 @@ crown:
         bye: 50
         devices: 50
         admin message: 50
+        +custom: 16.666666666666668
+        -custom: 16.666666666666668
     chains:
         userset:
             interval: 1800000
@@ -64,8 +55,9 @@ crown:
         n:
             interval: 1000
             num: 512
-
-# Rate limits for admins.
+        custom:
+            interval: 1000
+            num: 512
 admin:
     normal:
         a: 120
@@ -81,6 +73,8 @@ admin:
         bye: 50
         devices: 50
         admin message: 16.666666666666668
+        +custom: 8.333333333333334
+        -custom: 8.333333333333334
     chains:
         userset:
             interval: 500
@@ -91,3 +85,6 @@ admin:
         n:
             interval: 50
             num: 512
+        custom:
+            interval: 60000
+            num: 20000

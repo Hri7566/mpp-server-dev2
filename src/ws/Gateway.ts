@@ -65,6 +65,12 @@ export class Gateway {
     // Whether the user has sent a channel list subscription request, a.k.a. opened the channel list
     public hasOpenedChannelList = false; // implemented
 
+    // Whether the user has sent a custom message subscription request (+custom)
+    public hasSentCustomSub = false; // implemented
+
+    // Whether the user has sent a custom message unsubscription request (-custom)
+    public hasSentCustomUnsub = false; // implemented
+
     // Whether the user has changed their name/color this session (not just changed from default)
     public hasChangedName = false; // implemented
     public hasChangedColor = false; // implemented

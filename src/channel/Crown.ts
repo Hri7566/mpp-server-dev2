@@ -1,4 +1,4 @@
-import { Participant, Vector2 } from "../util/types";
+import { IParticipant, Vector2 } from "../util/types";
 import { Socket } from "../ws/Socket";
 
 // shiny hat

@@ -10,7 +10,7 @@ import type {
     IChannelInfo,
     IChannelSettings,
     OutgoingSocketEvents,
-    Participant,
+    IParticipant,
     IncomingSocketEvents,
     UserFlags,
     Vector2,
@@ -44,6 +44,7 @@ import {
 } from "~/data/permissions";
 import { getRoles } from "~/data/role";
 import { setTag } from "~/util/tags";
+import { bus } from "~/event/bus";
 
 const logger = new Logger("Sockets");
 
@@ -506,7 +507,7 @@ export class Socket extends EventEmitter {
     /**
      * Send this socket a channel update message
      **/
-    public sendChannelUpdate(ch: IChannelInfo, ppl: Participant[]) {
+    public sendChannelUpdate(ch: IChannelInfo, ppl: IParticipant[]) {
         this.sendArray([
             {
                 m: "ch",
@@ -545,7 +546,7 @@ export class Socket extends EventEmitter {
         const ch = this.getCurrentChannel();
 
         if (ch) {
-            const part = this.getParticipant() as Participant;
+            const part = this.getParticipant() as IParticipant;
             const cursorPos = this.getCursorPos();
 
             ch.sendArray([
@@ -851,6 +852,28 @@ export class Socket extends EventEmitter {
         }
 
         return false;
+    }
+
+    private isSubscribedToCustom = false;
+
+    public isCustomSubbed() {
+        return this.isSubscribedToCustom === true;
+    }
+
+    /**
+     * Start sending this socket the list of channels periodically
+     **/
+    public subscribeToCustom() {
+        if (this.isSubscribedToCustom) return;
+        this.isSubscribedToCustom = true;
+    }
+
+    /**
+     * Stop sending this socket the list of channels periodically
+     **/
+    public unsubscribeFromCustom() {
+        if (!this.isSubscribedToCustom) return;
+        this.isSubscribedToCustom = false;
     }
 }
 

@@ -21,11 +21,13 @@ declare type UserFlags = Partial<{
     mod: number;
     admin: number;
     vanish: number;
+    chat_color: string;
 }>;
 
-type ChannelFlags = Partial<{
+type TChannelFlags = Partial<{
     limit: number;
     owner_id: string;
+    no_crown: boolean;
 }>;
 
 declare interface Tag {
@@ -40,7 +42,7 @@ declare interface User {
     tag?: Tag;
 }
 
-declare interface Participant extends User {
+declare interface IParticipant extends User {
     id: string; // participant id (same as user id on mppclone)
 }
 

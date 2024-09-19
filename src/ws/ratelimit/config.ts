@@ -17,6 +17,9 @@ export interface RateLimitConfigList<
         "-ls": RL;
         chown: RL;
 
+        "+custom": RL;
+        "-custom": RL;
+
         // weird limits
         hi: RL;
         bye: RL;
@@ -28,6 +31,7 @@ export interface RateLimitConfigList<
         userset: RLC;
         chset: RLC;
         n: RLC; // not to be confused with NoteQuota
+        custom: RLC;
     };
 }
 
@@ -59,37 +63,8 @@ export const config = ConfigManager.loadConfig<RateLimitsConfig>(
                 "-ls": 1000 / 60,
                 chown: 2000,
 
-                hi: 1000 / 20,
-                bye: 1000 / 20,
-                devices: 1000 / 20,
-                "admin message": 1000 / 20
-            },
-            chains: {
-                userset: {
-                    interval: 1000 * 60 * 30,
-                    num: 1000
-                },
-                chset: {
-                    interval: 1000 * 60 * 30,
-                    num: 1024
-                },
-                n: {
-                    interval: 1000,
-                    num: 512
-                }
-            }
-        },
-        crown: {
-            normal: {
-                a: 6000 / 10,
-                m: 1000 / 20,
-                ch: 1000 / 1,
-                kickban: 1000 / 8,
-                unban: 1000 / 8,
-                t: 1000 / 128,
-                "+ls": 1000 / 60,
-                "-ls": 1000 / 60,
-                chown: 2000,
+                "+custom": 1000 / 60,
+                "-custom": 1000 / 60,
 
                 hi: 1000 / 20,
                 bye: 1000 / 20,
@@ -108,6 +83,49 @@ export const config = ConfigManager.loadConfig<RateLimitsConfig>(
                 n: {
                     interval: 1000,
                     num: 512
+                },
+                custom: {
+                    interval: 1000,
+                    num: 512
+                }
+            }
+        },
+        crown: {
+            normal: {
+                a: 6000 / 10,
+                m: 1000 / 20,
+                ch: 1000 / 1,
+                kickban: 1000 / 8,
+                unban: 1000 / 8,
+                t: 1000 / 128,
+                "+ls": 1000 / 60,
+                "-ls": 1000 / 60,
+                chown: 2000,
+
+                "+custom": 1000 / 60,
+                "-custom": 1000 / 60,
+
+                hi: 1000 / 20,
+                bye: 1000 / 20,
+                devices: 1000 / 20,
+                "admin message": 1000 / 20
+            },
+            chains: {
+                userset: {
+                    interval: 1000 * 60 * 30,
+                    num: 1000
+                },
+                chset: {
+                    interval: 1000 * 60 * 30,
+                    num: 1024
+                },
+                n: {
+                    interval: 1000,
+                    num: 512
+                },
+                custom: {
+                    interval: 1000,
+                    num: 512
                 }
             }
         },
@@ -122,6 +140,9 @@ export const config = ConfigManager.loadConfig<RateLimitsConfig>(
                 "+ls": 1000 / 60,
                 "-ls": 1000 / 60,
                 chown: 500,
+
+                "+custom": 1000 / 120,
+                "-custom": 1000 / 120,
 
                 hi: 1000 / 20,
                 bye: 1000 / 20,
@@ -140,6 +161,10 @@ export const config = ConfigManager.loadConfig<RateLimitsConfig>(
                 n: {
                     interval: 50,
                     num: 512
+                },
+                custom: {
+                    interval: 1000 * 60,
+                    num: 20000
                 }
             }
         }

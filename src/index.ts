@@ -20,21 +20,24 @@ import { Logger } from "./util/Logger";
 // docker hates this next one
 import { startReadline } from "./util/readline";
 import { loadDefaultPermissions } from "./data/permissions";
+import { loadBehaviors } from "./event/behaviors";
 
 // wrapper for some reason
 export function startServer() {
-    // Let's construct an entire object just for one thing to be printed
-    // and then keep it in memory for the entirety of runtime
     const logger = new Logger("Main");
     logger.info("Forceloading startup channels...");
     loadForcedStartupChannels();
+    logger.info("Finished forceloading");
+
+    logger.info("Loading behaviors...");
+    loadBehaviors();
+    logger.info("Finished loading behaviors");
 
     loadDefaultPermissions();
 
     // Break the console
+    logger.info("Starting REPL");
     startReadline();
-
-    // Nevermind, two things are printed
     logger.info("Ready");
 }
 

@@ -6,4 +6,4 @@ class EventBus extends EventEmitter {
     }
 }
 
-export const eventBus = new EventBus();
+export const bus = new EventBus();

@@ -11,7 +11,7 @@ defaultFlags:
 
 # Whether or not to allow users to change their color.
 # Based on some reports, the MPP.com server stopped allowing this around 2016.
-enableColorChanging: false
+enableColorChanging: true
 
 # Whether to allow custom data inside note messages.
 # This was in the original server, but not in MPP.net's server do to stricter sanitization.
@@ -20,7 +20,7 @@ enableCustomNoteData: true
 
 # Whether or not to enable tags that are sent publicly.
 # This won't prevent admins from changing tags internally, but they will not be sent to clients if set to false.
-enableTags: true
+enableTags: false
 
 # This is the user data that the server will use to send admin chat messages with.
 # This is a feature available on MPP.com, but was unknown to the MPP.net developers, therefore not implemented on MPP.net.

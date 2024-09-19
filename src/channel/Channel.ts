@@ -3,13 +3,13 @@ import { Logger } from "../util/Logger";
 import type {
     IChannelSettings,
     OutgoingSocketEvents,
-    Participant,
     IncomingSocketEvents,
+    IParticipant,
     IChannelInfo,
     Notification,
     UserFlags,
     Tag,
-    ChannelFlags as TChannelFlags
+    TChannelFlags
 } from "../util/types";
 import type { Socket } from "../ws/Socket";
 import { validateChannelSettings } from "./settings";
@@ -50,7 +50,7 @@ interface ExtraPartData {
     flags: UserFlags;
 }
 
-type ExtraPart = Participant & ExtraPartData;
+type ExtraPart = IParticipant & ExtraPartData;
 
 export class Channel extends EventEmitter {
     private settings: Partial<IChannelSettings>;
@@ -173,7 +173,8 @@ export class Channel extends EventEmitter {
                 }
             }
 
-            // We are not a lobby, so we must have a crown
+            // We are not a lobby, so we probably have a crown
+            // this.getFlag("no_crown");
             this.crown = new Crown();
 
             // ...and, possibly, an owner, too
@@ -246,15 +247,18 @@ export class Channel extends EventEmitter {
                 if (typeof msg.message !== "string") return;
 
                 const userFlags = socket.getUserFlags();
+                let overrideColor: string | undefined;
 
                 if (userFlags) {
-                    if (userFlags.cant_chat == 1) return;
-                    if (userFlags.chat_curse_1 == 1)
+                    if (userFlags.cant_chat === 1) return;
+                    if (userFlags.chat_curse_1 === 1)
                         msg.message = msg.message
                             .replace(/[aeiu]/g, "o")
                             .replace(/[AEIU]/g, "O");
-                    if (userFlags.chat_curse_2 == 1)
+                    if (userFlags.chat_curse_2 === 1)
                         msg.message = spoop_text(msg.message);
+                    if (typeof userFlags.chat_color === "string")
+                        overrideColor = userFlags.chat_color;
                 }
 
                 if (!this.settings.chat) return;
@@ -281,7 +285,7 @@ export class Channel extends EventEmitter {
                     .replace(/(\p{Mc}{5})\p{Mc}+/gu, "$1")
                     .trim();
 
-                const part = socket.getParticipant() as Participant;
+                const part = socket.getParticipant() as IParticipant;
 
                 const outgoing: OutgoingSocketEvents["a"] = {
                     m: "a",
@@ -289,6 +293,9 @@ export class Channel extends EventEmitter {
                     t: Date.now(),
                     p: part
                 };
+
+                if (typeof overrideColor !== "undefined")
+                    outgoing.p.color = overrideColor;
 
                 this.sendArray([outgoing]);
                 this.chatHistory.push(outgoing);
@@ -547,7 +554,7 @@ export class Channel extends EventEmitter {
      */
     public join(socket: Socket, force = false): void {
         if (this.isDestroyed()) return;
-        const part = socket.getParticipant() as Participant;
+        const part = socket.getParticipant() as IParticipant;
 
         let hasChangedChannel = false;
 
@@ -718,7 +725,7 @@ export class Channel extends EventEmitter {
      */
     public leave(socket: Socket) {
         // this.logger.debug("Leave called");
-        const part = socket.getParticipant() as Participant;
+        const part = socket.getParticipant() as IParticipant;
 
         let dupeCount = 0;
         for (const s of socketsByUUID.values()) {
@@ -947,7 +954,7 @@ export class Channel extends EventEmitter {
      * Change ownership (don't forget to use crown.canBeSetBy if you're letting a user call this)
      * @param part Participant to give crown to (or undefined to drop crown)
      */
-    public chown(part?: Participant) {
+    public chown(part?: IParticipant) {
         if (this.crown) {
             if (part) {
                 this.giveCrown(part);
@@ -962,7 +969,7 @@ export class Channel extends EventEmitter {
      * @param part Participant to give crown to
      * @param force Whether or not to force-create a crown (useful for lobbies)
      */
-    public giveCrown(part: Participant, force = false, update = true) {
+    public giveCrown(part: IParticipant, force = false, update = true) {
         if (force) {
             if (!this.crown) this.crown = new Crown();
         }
@@ -1039,7 +1046,7 @@ export class Channel extends EventEmitter {
         if (!banChannel) return;
 
         // Check if they are on the server at all
-        let bannedPart: Participant | undefined;
+        let bannedPart: IParticipant | undefined;
         const bannedUUIDs: string[] = [];
         for (const sock of socketsByUUID.values()) {
             if (sock.getUserID() === _id) {
@@ -1229,7 +1236,7 @@ export class Channel extends EventEmitter {
      * @param msg Chat message event to send
      * @param p Participant who is "sending the message"
      **/
-    public async sendChat(msg: IncomingSocketEvents["a"], p: Participant) {
+    public async sendChat(msg: IncomingSocketEvents["a"], p: IParticipant) {
         if (!msg.message) return;
 
         if (msg.message.length > 512) return;
