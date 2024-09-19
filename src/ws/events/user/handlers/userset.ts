@@ -6,13 +6,24 @@ export const userset: ServerEventListener<"userset"> = {
     callback: async (msg, socket) => {
         // Change username/color
         if (!socket.rateLimits?.chains.userset.attempt()) return;
-        if (typeof msg.set.name !== "string" && typeof msg.set.color !== "string") return;
+        if (
+            typeof msg.set.name !== "string" &&
+            typeof msg.set.color !== "string"
+        )
+            return;
 
-        if (typeof msg.set.name == "string") {
+        const user = socket.getUser();
+        if (!user) return;
+
+        if (typeof msg.set.name == "string" && msg.set.name !== user.name) {
             socket.gateway.hasChangedName = true;
         }
 
-        if (typeof msg.set.color == "string" && config.enableColorChanging) {
+        if (
+            typeof msg.set.color == "string" &&
+            msg.set.color !== user.color &&
+            config.enableColorChanging
+        ) {
             socket.gateway.hasChangedColor = true;
         }
 

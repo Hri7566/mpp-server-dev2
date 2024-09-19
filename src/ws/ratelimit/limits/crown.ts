@@ -14,10 +14,14 @@ export const crownLimits: RateLimitConstructorList = {
         "-ls": () => new RateLimit(config.crown.normal["-ls"]),
         chown: () => new RateLimit(config.crown.normal.chown),
 
+        "+custom": () => new RateLimit(config.crown.normal["+custom"]),
+        "-custom": () => new RateLimit(config.crown.normal["-custom"]),
+
         hi: () => new RateLimit(config.crown.normal.hi),
         bye: () => new RateLimit(config.crown.normal.bye),
         devices: () => new RateLimit(config.crown.normal.devices),
-        "admin message": () => new RateLimit(config.crown.normal["admin message"])
+        "admin message": () =>
+            new RateLimit(config.crown.normal["admin message"])
     },
     chains: {
         userset: () =>
@@ -28,12 +32,17 @@ export const crownLimits: RateLimitConstructorList = {
         chset: () =>
             new RateLimitChain(
                 config.crown.chains.chset.num,
-                config.crown.chains.userset.interval
+                config.crown.chains.chset.interval
             ),
         n: () =>
             new RateLimitChain(
                 config.crown.chains.n.num,
-                config.crown.chains.userset.interval
+                config.crown.chains.n.interval
+            ),
+        custom: () =>
+            new RateLimitChain(
+                config.crown.chains.custom.num,
+                config.crown.chains.custom.interval
             )
     }
 };

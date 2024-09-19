@@ -15,7 +15,7 @@ const logger = new Logger("WebSocket Server");
 
 // ip -> timestamp
 // for checking if they visited the site and are also connected to the websocket
-const httpIpCache = new Map<string, number>();
+export const httpIpCache = new Map<string, number>();
 
 interface IFrontendConfig {
     topButtons: "original" | "none";

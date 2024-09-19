@@ -1,6 +1,5 @@
-// This is some convoluted dark magic I copied from some old mpp server I wrote
-// No fucking clue where it came from or how it works internally, but I typedefized it
-// It's just a bunch of rate limits in a chain... like a RateLimitChain...... hmmmm.......
+// Replicated note quota class from client
+// with types!
 export class NoteQuota {
     public allowance = 8000;
     public max = 24000;

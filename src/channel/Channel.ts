@@ -149,6 +149,8 @@ export class Channel extends EventEmitter {
         // Copy default settings
         mixin(this.settings, config.defaultSettings);
 
+        if (owner_id) this.settings.owner_id = owner_id;
+
         if (!this.isLobby()) {
             if (set) {
                 // Copied from changeSettings below
@@ -717,6 +719,9 @@ export class Channel extends EventEmitter {
         this.emit("update", this);
 
         //this.logger.debug("Settings:", this.settings);
+        if (this.settings.owner_id === part._id) {
+            this.giveCrown(part, true, true);
+        }
     }
 
     /**
@@ -889,6 +894,20 @@ export class Channel extends EventEmitter {
             const part = socket.getParticipant();
             if (!part) return;
             pianoPartID = part.id;
+
+            const flags = socket.getUserFlags();
+
+            if (flags) {
+                // Is crownsolo on?
+                if (
+                    this.settings.crownsolo &&
+                    this.crown &&
+                    !(flags.admin || flags.mod)
+                ) {
+                    // Do they have the crown?
+                    if (part.id !== this.crown.participantId) return;
+                }
+            }
         }
 
         const clientMsg: OutgoingSocketEvents["n"] = {

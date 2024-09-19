@@ -30,7 +30,7 @@ export class Gateway {
     public isTokenValid = false; // implemented
 
     // Their user agent, if sent
-    public userAgent = ""; // TODO
+    public userAgent = ""; // partially implemented
 
     // Whether they have moved their cursor
     public hasCursorMoved = false; // implemented

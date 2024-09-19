@@ -14,10 +14,14 @@ export const adminLimits: RateLimitConstructorList = {
         "-ls": () => new RateLimit(config.admin.normal["-ls"]),
         chown: () => new RateLimit(config.admin.normal.chown),
 
+        "+custom": () => new RateLimit(config.admin.normal["+custom"]),
+        "-custom": () => new RateLimit(config.admin.normal["-custom"]),
+
         hi: () => new RateLimit(config.admin.normal.hi),
         bye: () => new RateLimit(config.admin.normal.bye),
         devices: () => new RateLimit(config.admin.normal.devices),
-        "admin message": () => new RateLimit(config.admin.normal["admin message"])
+        "admin message": () =>
+            new RateLimit(config.admin.normal["admin message"])
     },
     chains: {
         userset: () =>
@@ -28,12 +32,17 @@ export const adminLimits: RateLimitConstructorList = {
         chset: () =>
             new RateLimitChain(
                 config.admin.chains.chset.num,
-                config.admin.chains.userset.interval
+                config.admin.chains.chset.interval
             ),
         n: () =>
             new RateLimitChain(
                 config.admin.chains.n.num,
-                config.admin.chains.userset.interval
+                config.admin.chains.n.interval
+            ),
+        custom: () =>
+            new RateLimitChain(
+                config.admin.chains.custom.num,
+                config.admin.chains.custom.interval
             )
     }
 };

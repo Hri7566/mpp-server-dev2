@@ -1,6 +1,6 @@
 import { ChannelList } from "~/channel/ChannelList";
 import { bus } from "./bus";
-import type { ClientEvents, ServerEvents } from "~/util/types";
+import type { OutgoingSocketEvents, IncomingSocketEvents } from "~/util/types";
 import { socketsByUUID, type Socket } from "~/ws/Socket";
 
 export function loadBehaviors() {
@@ -12,7 +12,7 @@ export function loadBehaviors() {
 
     bus.on("ls", () => {});
 
-    bus.on("custom", (msg: ServerEvents["custom"], sender: Socket) => {
+    bus.on("custom", (msg: IncomingSocketEvents["custom"], sender: Socket) => {
         if (typeof msg !== "object") return;
         if (typeof msg.data === "undefined") return;
         if (typeof msg.target !== "object") return;
@@ -52,7 +52,7 @@ export function loadBehaviors() {
                             m: "custom",
                             data: msg.data,
                             p: sender.getUserID()
-                        } as ClientEvents["custom"]
+                        } as OutgoingSocketEvents["custom"]
                     ]);
                 }
             } else if (msg.target.mode === "ids") {
@@ -65,7 +65,7 @@ export function loadBehaviors() {
                             m: "custom",
                             data: msg.data,
                             p: sender.getUserID()
-                        } as ClientEvents["custom"]
+                        } as OutgoingSocketEvents["custom"]
                     ]);
                 }
             } else if (msg.target.mode === "subscribed") {
@@ -74,7 +74,7 @@ export function loadBehaviors() {
                         m: "custom",
                         data: msg.data,
                         p: sender.getUserID()
-                    } as ClientEvents["custom"]
+                    } as OutgoingSocketEvents["custom"]
                 ]);
             }
         }
