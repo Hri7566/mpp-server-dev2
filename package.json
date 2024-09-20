@@ -7,8 +7,8 @@
   "author": "Hri7566",
   "license": "ISC",
   "scripts": {
-    "start": "bun run src/index.ts",
-    "dev": "bun run src/index.ts --watch"
+    "start": "bun run src/start.ts",
+    "dev": "bun run src/start.ts --watch"
   },
   "dependencies": {
     "@prisma/client": "5.17.0",
