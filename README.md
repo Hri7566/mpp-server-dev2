@@ -72,27 +72,29 @@ This has always been the future intention of this project.
 
 ## TODO
 
-- [ ] Channel data saving (I forget what this means)
-- [ ] Token generation
+- [x] Token generation
+  - [ ] Frontend implementation
 - [ ] Permission groups and permissions
     - [x] Probable permission groups: owner, admin, mod, trialmod, default
     - [x] Setup tags for each permission group
+    - [ ] Implement permissions into rest of server
 - [ ] MPP.com data message
     - Implement based on `spooky.js` given there is no official documentation
 - [ ] No cussing setting
-- [ ] Full server-wide event bus
+    - badwords.txt
+- [x] Full server-wide event bus
     - [ ] Channel events
     - [ ] Socket events
     - [ ] User data events
     - [ ] Permission-related events
 - [ ] Redo ratelimits
-- [ ] Redo all of the validations with Zod
-    - This probably means making Zod schemas for every single message type
-    - Also user and channel data
 - [ ] Test every frontend
 - [ ] Test fishing bot
 - [ ] Remote console
-- [ ] Modify frontend to use templating
+- [x] Modify frontend to use templating
+  - [x] index.html
+  - [ ] js files
+    - [ ] Completley reorganize script.js
 
 ## Backlog/Notes
 
@@ -108,10 +110,12 @@ This has always been the future intention of this project.
     - Check for different messages?
     - Check for URL?
     - Notifications for server-generated XSS?
+    - Somehow check for templating, maybe with the existing httpIPCache?
 - Migrate to PostgreSQL instead of SQLite
-     - Likely a low priority, we use prisma anyway, but it would be nice to have a server
+     - Likely a low priority, we use prisma anyway, but it would be nice to have a non-blocking database
 - Implement user caching
     - Skip redis due to the infamous licensing issues
+      - fork?
     - Probably use a simple in-memory cache
     - Likely store with leveldb or JSON
 
