@@ -13,7 +13,7 @@
   "dependencies": {
     "@prisma/client": "5.17.0",
     "@t3-oss/env-core": "^0.6.1",
-    "bun-types": "^1.1.27",
+    "bun-types": "^1.1.28",
     "commander": "^11.1.0",
     "date-holidays": "^3.23.12",
     "events": "^3.3.0",
@@ -28,7 +28,7 @@
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "@types/jsonwebtoken": "^9.0.6",
+    "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^20.16.5",
     "@types/nunjucks": "^3.2.6",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
