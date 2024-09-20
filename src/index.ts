@@ -15,7 +15,7 @@
 
 // If you don't load the server first, bun will literally segfault
 import "./ws/server";
-import { loadForcedStartupChannels } from "./channel/forceLoad";
+import { loadForcedStartupChannels } from "./channel/forceload";
 import { Logger } from "./util/Logger";
 // docker hates this next one
 import { startReadline } from "./util/readline";

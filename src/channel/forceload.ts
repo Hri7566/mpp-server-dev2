@@ -14,9 +14,15 @@ const logger = new Logger("Channel Forceloader");
  */
 export function forceloadChannel(id: string) {
     try {
-        logger.info("Forceloading", id);
-        new Channel(id, undefined, undefined, undefined, true);
-        return true;
+        const existing = ChannelList.getChannel(id);
+        if (existing) {
+            logger.info("Keeping", id, "forceloaded");
+            existing.setForceload(true);
+        } else {
+            logger.info("Forceloading", id);
+            new Channel(id, undefined, undefined, undefined, true);
+            return true;
+        }
     } catch (err) {
         return false;
     }
