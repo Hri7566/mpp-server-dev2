@@ -31,7 +31,7 @@ import {
     getSavedChannel,
     saveChannel
 } from "../data/channel";
-import { forceloadChannel } from "./forceLoad";
+import { forceloadChannel } from "./forceload";
 
 interface CachedKickban {
     userId: string;
@@ -91,7 +91,8 @@ export class Channel extends EventEmitter {
             const data = {
                 id: info._id,
                 settings: JSON.stringify(info.settings),
-                flags: JSON.stringify(this.flags)
+                flags: JSON.stringify(this.flags),
+                forceload: this.stays
             };
 
             //this.logger.debug("Channel data to save:", data);
@@ -205,6 +206,7 @@ export class Channel extends EventEmitter {
     }
 
     private alreadyBound = false;
+    private destroyTimeout: Timer | undefined;
 
     private bindEventListeners() {
         if (this.alreadyBound) return;
@@ -214,6 +216,12 @@ export class Channel extends EventEmitter {
         this.logger.info("Loaded chat history");
 
         this.on("update", (self, uuid) => {
+            // Propogate channel flags intended to be updated
+            if (typeof this.flags.owner_id === "string") {
+                this.settings.owner_id = this.flags.owner_id;
+            }
+
+            // this.logger.debug("update");
             // Send updated info
             for (const socket of socketsByUUID.values()) {
                 for (const p of this.ppl) {
@@ -233,12 +241,19 @@ export class Channel extends EventEmitter {
 
             if (this.ppl.length === 0 && !this.stays) {
                 if (config.channelDestroyTimeout) {
-                    setTimeout(() => {
+                    this.destroyTimeout = setTimeout(() => {
                         this.destroy();
                     }, config.channelDestroyTimeout);
                 } else {
                     this.destroy();
                 }
+            }
+
+            if (
+                this.ppl.length > 0 &&
+                typeof this.destroyTimeout !== "undefined"
+            ) {
+                clearTimeout(this.destroyTimeout);
             }
         });
 
@@ -670,7 +685,7 @@ export class Channel extends EventEmitter {
 
                         if (p) {
                             // Give the crown back
-                            this.giveCrown(p, true, false);
+                            this.giveCrown(p, true, true);
                         }
                     }
                 }
@@ -716,7 +731,8 @@ export class Channel extends EventEmitter {
         // Broadcast a channel update so everyone subscribed to the channel list can see the new user count
         //this.emit("update", this, socket.getUUID());
         //this.logger.debug("Update from join");
-        this.emit("update", this);
+        // this.emit("update", this);
+        socket.sendChannelUpdate(this.getInfo(), this.getParticipantList());
 
         //this.logger.debug("Settings:", this.settings);
         if (this.settings.owner_id === part._id) {
@@ -730,7 +746,8 @@ export class Channel extends EventEmitter {
      */
     public leave(socket: Socket) {
         // this.logger.debug("Leave called");
-        const part = socket.getParticipant() as IParticipant;
+        const part = socket.getParticipant();
+        if (!part) return;
 
         let dupeCount = 0;
         for (const s of socketsByUUID.values()) {
@@ -746,27 +763,31 @@ export class Channel extends EventEmitter {
         if (dupeCount === 1) {
             const p = this.ppl.find(p => p.id === socket.getParticipantID());
 
+            let hadCrown = false;
+
             if (p) {
                 this.ppl.splice(this.ppl.indexOf(p), 1);
 
                 if (this.crown) {
                     if (this.crown.participantId === p.id) {
                         // Channel owner left, reset crown timeout
+                        hadCrown = true;
                         this.chown();
                     }
                 }
             }
 
             // Broadcast bye
-            this.sendArray([
-                {
-                    m: "bye",
-                    p: part.id
-                }
-            ]);
+            if (!hadCrown)
+                this.sendArray([
+                    {
+                        m: "bye",
+                        p: part.id
+                    }
+                ]);
 
             //this.logger.debug("Update from leave");
-            this.emit("update", this);
+            // this.emit("update", this);
         } else {
             for (const p of this.ppl) {
                 if (!p.uuids.includes(socket.getUUID())) continue;
@@ -946,6 +967,7 @@ export class Channel extends EventEmitter {
      */
     public destroy() {
         if (this.destroyed) return;
+
         this.destroyed = true;
 
         if (this.ppl.length > 0) {
@@ -999,7 +1021,7 @@ export class Channel extends EventEmitter {
             this.crown.time = Date.now();
 
             if (update) {
-                //this.logger.debug("Update from giveCrown");
+                // this.logger.debug("Update from giveCrown");
                 this.emit("update", this);
             }
         }
@@ -1308,6 +1330,8 @@ export class Channel extends EventEmitter {
         val: TChannelFlags[K]
     ) {
         this.flags[key] = val;
+        this.logger.debug("Updating channel flag " + key + " to", val);
+        this.emit("update", this);
     }
 
     /**
@@ -1369,6 +1393,11 @@ export class Channel extends EventEmitter {
                 1000
             ).toFixed(2)}M`
         );
+    }
+
+    public setForceload(enable: boolean) {
+        this.stays = enable;
+        this.save();
     }
 }
 

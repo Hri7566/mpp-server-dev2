@@ -281,6 +281,11 @@ declare interface IncomingSocketEvents {
         _id: string;
     };
 
+    unforceload: {
+        m: "unforceload";
+        _id: string;
+    };
+
     ch_flag: {
         m: "ch_flag";
         _id?: string;
