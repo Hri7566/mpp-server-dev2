@@ -41,4 +41,4 @@ export function startServer() {
     logger.info("Ready");
 }
 
-startServer();
+// startServer();
