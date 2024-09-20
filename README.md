@@ -207,9 +207,19 @@ However, if you would like the templating features and want the frontend to chan
     ```
 
 5. Run
+   
+    The main entrypoint is in `src/start.ts`.
 
     ```
-    $ bun .
+    $ bun src/start.ts
+    ```
+
+    If you would like to run in development mode:
+
+    ```
+    $ bun dev
+    # or
+    $ bun run dev
     ```
 
 ## Background Info on Feature Implementation Decisions
