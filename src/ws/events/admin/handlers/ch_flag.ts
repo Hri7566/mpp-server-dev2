@@ -1,5 +1,8 @@
+import { Logger } from "~/util/Logger";
 import { ChannelList } from "../../../../channel/ChannelList";
 import { ServerEventListener, TChannelFlags } from "../../../../util/types";
+
+const logger = new Logger("Channel flag input");
 
 export const ch_flag: ServerEventListener<"ch_flag"> = {
     id: "ch_flag",
@@ -17,7 +20,7 @@ export const ch_flag: ServerEventListener<"ch_flag"> = {
         if (typeof msg.key !== "string") return;
         if (typeof msg.value === "undefined") return;
 
-        const ch = ChannelList.getList().find(c => c.getID() == chid);
+        const ch = ChannelList.getChannel(chid);
         if (!ch) return;
 
         ch.setFlag(

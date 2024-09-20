@@ -1,5 +1,5 @@
-import { forceloadChannel } from "../../../../channel/forceLoad";
-import { ServerEventListener } from "../../../../util/types";
+import { forceloadChannel } from "~/channel/forceload";
+import { ServerEventListener } from "~/util/types";
 
 export const forceload: ServerEventListener<"forceload"> = {
     id: "forceload",

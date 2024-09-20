@@ -17,6 +17,9 @@ import { kickban } from "./handlers/kickban";
 import { bye } from "./handlers/bye";
 import { chown } from "./handlers/chown";
 import { unban } from "./handlers/unban";
+import { plus_custom } from "./handlers/+custom";
+import { minus_custom } from "./handlers/-custom";
+import { custom } from "./handlers/custom";
 
 // Imagine not having an "addMany" function...
 
@@ -48,7 +51,10 @@ EVENTGROUP_USER.addMany(
     kickban,
     unban,
     bye,
-    chown
+    chown,
+    plus_custom,
+    minus_custom,
+    custom
 );
 
 eventGroups.push(EVENTGROUP_USER);
