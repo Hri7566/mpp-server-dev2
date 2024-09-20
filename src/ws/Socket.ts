@@ -861,7 +861,7 @@ export class Socket extends EventEmitter {
     }
 
     /**
-     * Start sending this socket the list of channels periodically
+     * Allow custom messages to be sent and received from this socket
      **/
     public subscribeToCustom() {
         if (this.isSubscribedToCustom) return;
@@ -869,7 +869,7 @@ export class Socket extends EventEmitter {
     }
 
     /**
-     * Stop sending this socket the list of channels periodically
+     * Disallow custom messages to be sent and received from this socket
      **/
     public unsubscribeFromCustom() {
         if (!this.isSubscribedToCustom) return;
