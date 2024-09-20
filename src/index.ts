@@ -13,14 +13,13 @@
 // There are a lot of unhinged bs comments in this repo
 // Pay no attention to the ones that cuss you out
 
-// If you don't load the server first, bun will literally segfault
-import "./ws/server";
 import { loadForcedStartupChannels } from "./channel/forceload";
 import { Logger } from "./util/Logger";
 // docker hates this next one
 import { startReadline } from "./util/readline";
 import { loadDefaultPermissions } from "./data/permissions";
 import { loadBehaviors } from "./event/behaviors";
+import { startHTTPServer } from "./ws/server";
 
 // wrapper for some reason
 export function startServer() {
@@ -38,6 +37,8 @@ export function startServer() {
     // Break the console
     logger.info("Starting REPL");
     startReadline();
+
+    startHTTPServer();
     logger.info("Ready");
 }
 
