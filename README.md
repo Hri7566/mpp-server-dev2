@@ -1,4 +1,4 @@
-![MPP](https://github.com/multiplayerpiano/mpp-frontend-v1/blob/master/static/128-piano.png?raw=true)
+<img src="./.resources/images/128-piano-dev2.png" alt="MPP" width="128" />
 
 # mpp-server-dev2
 
