@@ -2,7 +2,7 @@
 
 # mpp-server-dev2
 
-This is an MPP server currently in development for [MPP.dev](https://www.multiplayerpiano.dev). The original server is old and the site desperately needs a new one.
+This is an MPP server currently in development for [MPP.dev](https://www.multiplayerpiano.dev). It is roughly feature complete, supporting many of the planned ideas already, but certain features that some users might want to use for another site are currently unimplemented, namely a more complicated scheme for the antibot system.
 
 This server uses Bun - not just the runtime, but the libraries as well. This is because Bun provides easy access to uWebSockets.js, a speedy implementation of WebSockets that heavily outperforms the old `ws` module that is used so frequently.
 
@@ -121,33 +121,28 @@ This has always been the future intention of this project.
 
 ## How to run
 
-Don't expect these instructions to stay the same. They might not even be up to date already! This is due to frequent changes in this repository, as this project is still in active development.
+This might seem like a lot of reading, but it's worth reading through everything here. There's a lot of info that you could miss, so take your time!
+Also, don't expect these instructions to stay the same forever. Because this server is in an early pre-release state and is in active development, there will be frequent changes in this repository.
 
-0. Install bun
+0. Setup
+
+- Install bun
 
     ```
     $ curl -fsSL https://bun.sh/install | bash
     ```
 
-1. Clone the repository and setup Git submodules
+- Clone the repository and setup Git submodules
 
-If you are forking this repository, you can just setup a new submodule for the frontend, **however, templating will likely not function properly.**
+If you are forking this repository, you can just setup a new submodule for the frontend (instructions not included), **however, templating will likely not function properly with this approach unless you implement it yourself.**
+
 If you would like to use a different repository for the frontend, the files go in the `public` folder.
 
-However, if you would like the templating features and want the frontend to change based on the server's configuration, setting up git submodules is required for full compatability.
+In any case, if you would like the templating features and want the frontend to change based on the server's configuration, setting up git submodules is practically required for full compatability.
 
-- Clone the repository
-
-    ```
-    $ git clone https://git.hri7566.info/Hri7566/mpp-server-dev2
-    ```
-
-- Setup git submodules
-
-    ```
-    $ cd mpp-server-dev2
-    $ git submodule update --init --recursive
-    ```
+```
+$ git clone --recursive https://git.hri7566.info/Hri7566/mpp-server-dev2
+```
 
 2. Configure
 
@@ -163,6 +158,8 @@ However, if you would like the templating features and want the frontend to chan
     - `ADMIN_PASS`: Admin password for the server
     - `SALT`: Hashing salt for creating general-purpose IDs/user IDs
     - `COLOR_SALT`: Hashing salt for creating user colors
+
+    Obviously, you can also set those in your shell environment instead, if need be.
 
     - Edit the files in the `config` folder to match your needs
 
@@ -187,7 +184,7 @@ However, if you would like the templating features and want the frontend to chan
 
     - `none`: Disable browser challenge
     - `basic`: Use a simple function to detect browsers
-    - `obf`: Use an obfuscated function to detect browsers - this is not implemented as of yet
+    - `obf`: Use an obfuscated function to detect browsers - **this is not implemented yet**
 
     The `basic` option only sends a simple function to the client, and the `obf` option sends an obfuscated mess to the client.
 
@@ -224,20 +221,21 @@ However, if you would like the templating features and want the frontend to chan
 
 ## Background Info on Feature Implementation Decisions
 
-To avoid various controversies or mass confusion, I will attempt to explain why certain features were implemented in this section.
+To avoid various controversies or mass confusion, I will attempt to explain why certain features were implemented any why certain things may be missing in this section.
 
 ### General Explanation
 
-Multiplayer Piano was originally developed by Brandon Lockaby from 2012-2020, and this server was the original MPP server and was written in JavaScript for Node.js.
-It had many unknown features and basically has no documentation, so most of the admin features based on this server are guesswork or based on tiny snippets of code acquired from various sources.
-This server was hosted on `www.multiplayerpiano.com:80` until some time in 2019-2020, when it was upgraded to https and moved to `www.multiplayerpiano.dev:443`.
+Multiplayer Piano (MPP) was originally developed by Brandon Lockaby from 2012-2020, and this server was the original MPP server and was written in JavaScript for the Node.js runtime.
+Brandon didn't share details about it often, and it had many unknown features and basically has no documentation, so most of the admin features based on this server are guesswork or based on tiny snippets of code acquired from various sources.
+The only other people known to be associated in the development were chacha and 
+This server was hosted on Linode under the domain `www.multiplayerpiano.com:80` until some time in 2019-2020, when it was upgraded to https and moved to `www.multiplayerpiano.com:443`.
 
 After that point, in late 2020, the rights to the site were sold to some user who later revealed themselves as "jacored", but they have been unhelpful in all regards.
 As much as I would like to make peace with them, I have decided they are simply not worth it due to neglecting my help in the past, and threatening to sue me for alleged DDOSing or copyright infringement,
-call the police, and even get some of my good friends arrested. So... past 2020, we don't have much information about the server's changes.
+call my local police, and even threatened to get some of my good developer friends arrested. So... past 2020, we don't have much information about the server's changes.
 
 Due to those reasons, I have decided to deem the original server 2021-onwards as "jacored's server" or similar.
-This is because it is a lot less stable and less like Brandon's original efforts to keep things running smoothly.
+This is because it is a lot less stable and less like Brandon's original efforts to keep things running smoothly, and there is a transition point where it was no longer running on Linode.
 
 Somewhere around 2015-2017, there was another server developed by nagalun (aka Ming) called `multiplayerpian-server` on GitHub.
 This server was written in C++ and was largely based on Brandon's server.
@@ -267,7 +265,7 @@ server and the frontend to keep moderation and user experience in check.
 Due to this, I have decided to implement most features from the MPP.net server here.
 **None of the source code from MPP.net is used in this repository.**
 
-Around 2021-2024, multiple servers were developed by Someone8448 called `smnmpp` or similar.
+Around 2021-2024, multiple servers in direct correlation with each other were developed by Someone8448 called `smnmpp` or similar.
 These servers were closed source and roughly based on MPP.net.
 
 Other servers were developed and forked by other users, but none of them are necessarily popular enough to be used as a reference.
@@ -326,10 +324,11 @@ Someone8448 also implemented their own antibot system, but there are no plans to
 
 ### Color changing
 
-Although this feature is likely self-explanatory, it is worth mentioning due to the fact it isn't enabled on MPP.com.
+Although this feature is likely self-explanatory, this is worth mentioning due to the fact this isn't enabled on MPP.com's server.
 Most other servers including MPP.net allow color changing.
 
 Color changing is simply whether clients have the ability to change their color in the `userset` message.
+The original server was capable of controlling the served HTML for the modal UI related to changing user settings.
 
 ### Chat filtering
 
