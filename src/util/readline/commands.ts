@@ -1,6 +1,6 @@
 import { getRoles, giveRole, removeRole } from "~/data/role";
 import { ChannelList } from "../../channel/ChannelList";
-import { deleteUser, getUsers } from "../../data/user";
+import { deleteAllUsers, deleteUser, getUsers } from "../../data/user";
 import Command from "./Command";
 import {
     addRolePermission,
@@ -10,6 +10,7 @@ import {
     removeRolePermission
 } from "~/data/permissions";
 import { builtinTags, removeTag, setBuiltinTag } from "../tags";
+import logger from "./logger";
 
 Command.addCommand(
     new Command(["help", "h", "commands", "cmds"], "help", msg => {
@@ -196,5 +197,18 @@ Command.addCommand(
                 return err;
             }
         }
+    })
+);
+
+Command.addCommand(
+    new Command(["deleteallusers"], "deleteallusers [confirm]", async msg => {
+        if (!msg.args[1])
+            return `Are you sure this is what you want? Type "deleteallusers confirm" to confirm:`;
+
+        if (msg.args[1] !== "confirm") return "Invalid response";
+
+        logger.info("Deletion info:", await deleteAllUsers());
+
+        return "All user data successfully deleted.";
     })
 );

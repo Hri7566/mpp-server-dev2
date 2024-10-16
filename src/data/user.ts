@@ -35,13 +35,17 @@ export async function getUsers() {
     return {
         users: await prisma.user.findMany(),
         count: await prisma.user.count()
-    }
+    };
 }
 
 export async function deleteUser(_id: string) {
     return await prisma.user.delete({
         where: { id: _id }
     });
+}
+
+export async function deleteAllUsers() {
+    return await prisma.user.deleteMany();
 }
 
 export async function readUser(_id: string) {

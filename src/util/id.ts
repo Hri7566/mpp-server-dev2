@@ -50,9 +50,6 @@ export function createSocketID() {
 }
 
 export function createColor(_id: string) {
-    logger.debug(
-        "Creating color for " + _id + " using method " + config.colorGeneration
-    );
     if (config.colorGeneration == "random") {
         return "#" + Math.floor(Math.random() * 16777215).toString(16);
     } else if (config.colorGeneration == "sha256") {
@@ -73,7 +70,6 @@ export function createColor(_id: string) {
         const g = output.readUInt8(1) + 0x20;
         const b = output.readUInt8(2);
 
-        logger.debug("Colors:", r, g, b);
         return (
             "#" +
             r.toString(16).padStart(2, "0") +
