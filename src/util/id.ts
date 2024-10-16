@@ -1,6 +1,10 @@
-import { createHash, randomBytes } from "crypto"; import env from "./env";
+import { createHash, randomBytes } from "crypto";
+import env from "./env";
 import { spoop_text } from "./helpers";
 import { config } from "../ws/usersConfig";
+import { Logger } from "./Logger";
+
+const logger = new Logger("IDGen");
 
 export function createID() {
     // Maybe I could make this funnier than it needs to be...
@@ -46,14 +50,20 @@ export function createSocketID() {
 }
 
 export function createColor(_id: string) {
+    logger.debug(
+        "Creating color for " + _id + " using method " + config.colorGeneration
+    );
     if (config.colorGeneration == "random") {
         return "#" + Math.floor(Math.random() * 16777215).toString(16);
     } else if (config.colorGeneration == "sha256") {
-        return "#" + createHash("sha256")
-            .update(_id)
-            .update(env.SALT)
-            .digest("hex")
-            .substring(24, 24 + 6);
+        return (
+            "#" +
+            createHash("sha256")
+                .update(_id)
+                .update(env.SALT)
+                .digest("hex")
+                .substring(24, 24 + 6)
+        );
     } else if (config.colorGeneration == "mpp") {
         const hash = createHash("md5");
         hash.update(_id + env.COLOR_SALT);
@@ -63,7 +73,13 @@ export function createColor(_id: string) {
         const g = output.readUInt8(1) + 0x20;
         const b = output.readUInt8(2);
 
-        return "#" + r.toString(16) + g.toString(16) + b.toString(16);
+        logger.debug("Colors:", r, g, b);
+        return (
+            "#" +
+            r.toString(16).padStart(2, "0") +
+            g.toString(16).padStart(2, "0") +
+            b.toString(16).padStart(2, "0")
+        );
     } else if (config.colorGeneration == "white") {
         return "#ffffff";
     }
