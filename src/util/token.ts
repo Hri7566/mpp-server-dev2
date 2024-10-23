@@ -87,12 +87,14 @@ export async function validateToken(userID: string, token: string) {
         const user = await readUser(userID);
 
         if (!user) {
-            logger.warn(`Unable to validate token for user ${userID}: User not found, which is really weird`);
+            logger.warn(
+                `Unable to validate token for user ${userID}: User not found, which is really weird`
+            );
             return false;
         }
 
         if (typeof user.tokens !== "string") {
-            user.tokens = "[]";
+            user.tokens = "[]"; // shut up go away
         }
 
         const data = JSON.parse(user.tokens) as string[];
