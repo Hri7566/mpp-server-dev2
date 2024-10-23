@@ -158,4 +158,11 @@ export class ConfigManager {
             }
         ) as T;
     }
+
+    /**
+     * Get the in-memory config's value directly from the map (not a proxy object)
+     */
+    public static getOriginalConfigObject<T>(configPath: string) {
+        return this.configCache.get(configPath) as T;
+    }
 }
