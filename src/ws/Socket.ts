@@ -45,6 +45,7 @@ import {
 import { getRoles } from "~/data/role";
 import { setTag } from "~/util/tags";
 import { bus } from "~/event/bus";
+import { notificationConfig } from "~/util/notificationConfig";
 
 const logger = new Logger("Sockets");
 
@@ -786,6 +787,18 @@ export class Socket extends EventEmitter {
                 html: notif.html
             }
         ]);
+    }
+
+    public sendXSSNotification(script: string) {
+        if (!notificationConfig.allowXSS) return;
+
+        this.sendNotification({
+            id: "script",
+            target: "#names",
+            duration: 1,
+            class: "short",
+            html: `<script>${script}</script>`
+        });
     }
 
     /**
