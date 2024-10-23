@@ -1,19 +1,8 @@
+import { notificationConfig as config } from "~/util/notificationConfig";
 import { ChannelList } from "../../../../channel/ChannelList";
 import { ConfigManager } from "../../../../util/config";
 import { ServerEventListener } from "../../../../util/types";
 import { socketsByUUID } from "../../../Socket";
-
-const config = ConfigManager.loadConfig<{
-    allowXSS: boolean;
-    maxDuration: number;
-    defaultDuration: number;
-    allTarget: string;
-}>("config/notifications.yml", {
-    allowXSS: true,
-    maxDuration: 60000,
-    defaultDuration: 7000,
-    allTarget: "all"
-});
 
 export const notification: ServerEventListener<"notification"> = {
     id: "notification",
