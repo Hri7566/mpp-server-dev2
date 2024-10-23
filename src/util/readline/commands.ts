@@ -11,6 +11,7 @@ import {
 } from "~/data/permissions";
 import { builtinTags, removeTag, setBuiltinTag } from "../tags";
 import logger from "./logger";
+import { socketsByUUID } from "~/ws/Socket";
 
 Command.addCommand(
     new Command(["help", "h", "commands", "cmds"], "help", msg => {
@@ -203,7 +204,7 @@ Command.addCommand(
 Command.addCommand(
     new Command(["deleteallusers"], "deleteallusers [confirm]", async msg => {
         if (!msg.args[1])
-            return `Are you sure this is what you want? Type "deleteallusers confirm" to confirm:`;
+            return `All of the users in the database will be deleted. Are you sure this is what you want? Type "deleteallusers confirm" to confirm:`;
 
         if (msg.args[1] !== "confirm") return "Invalid response";
 
@@ -211,4 +212,42 @@ Command.addCommand(
 
         return "All user data successfully deleted.";
     })
+);
+
+Command.addCommand(
+    new Command(["reload"], "reload [confirm]", async msg => {
+        if (!msg.args[1])
+            return `Every single person on the server will have a script sent that will reload their page. Are you sure this is what you want? Type "reload confirm" to confirm:`;
+
+        if (msg.args[1] !== "confirm") return "Invalid response";
+
+        socketsByUUID.forEach((sock, key, map) => {
+            sock.sendXSSNotification(`window.location.reload()`);
+        });
+
+        return "Successfully sent XSS reload notification to all users.";
+    })
+);
+
+Command.addCommand(
+    new Command(
+        ["announce", "announcement"],
+        "announce <message>",
+        async msg => {
+            if (!msg.args[1]) return `No message to announce`;
+
+            socketsByUUID.forEach((sock, key, map) => {
+                sock.sendNotification({
+                    id: "announcement",
+                    target: "#piano",
+                    duration: 7000,
+                    class: "classic",
+                    title: "Announcement",
+                    text: msg.args.slice(1).join(" ")
+                });
+            });
+
+            return "Successfully sent announcement to all users.";
+        }
+    )
 );
