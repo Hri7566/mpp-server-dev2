@@ -9,7 +9,7 @@ import { getMOTD } from "../util/motd";
 import nunjucks from "nunjucks";
 import type { Server, ServerWebSocket } from "bun";
 import { ConfigManager } from "~/util/config";
-import { config as usersConfig } from "./usersConfig";
+import { config as usersConfig, usersConfigPath } from "./usersConfig";
 
 const logger = new Logger("WebSocket Server");
 
@@ -23,14 +23,13 @@ interface IFrontendConfig {
     winter: boolean;
 }
 
-const config = ConfigManager.loadConfig<IFrontendConfig>(
-    "config/frontend.yml",
-    {
-        topButtons: "original",
-        disableChat: false,
-        winter: false
-    }
-);
+const configPath = "config/frontend.yml";
+
+const config = ConfigManager.loadConfig<IFrontendConfig>(configPath, {
+    topButtons: "original",
+    disableChat: false,
+    winter: false
+});
 
 /**
  * Get a rendered version of the index file
@@ -45,10 +44,18 @@ async function getIndex() {
 
     const index = Bun.file("./public/index.html");
 
+    const base64config = btoa(
+        JSON.stringify({
+            config: ConfigManager.getOriginalConfigObject(configPath),
+            usersConfig: ConfigManager.getOriginalConfigObject(usersConfigPath)
+        })
+    );
+
     const rendered = nunjucks.renderString(await index.text(), {
         motd: getMOTD(),
         config,
-        usersConfig
+        usersConfig,
+        base64config
     });
 
     const response = new Response(rendered);
