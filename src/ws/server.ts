@@ -62,7 +62,10 @@ async function getIndex(path?: string, userID?: string) {
 
     try {
         if (typeof path === "string") {
-            const ch = ChannelList.getChannel(path.substring(1));
+            const ch = ChannelList.getChannel(
+                path == "/" ? "lobby" : path.substring(1)
+            );
+
             if (typeof ch !== "undefined") {
                 configs.urlChannel = ch.getInfo(userID);
             }
