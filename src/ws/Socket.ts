@@ -597,6 +597,12 @@ export class Socket extends EventEmitter {
         const ch = this.getCurrentChannel();
         let hasNoteRateLimitBypass = false;
 
+        const flags = this.getUserFlags();
+
+        if (flags) {
+            if (flags.admin == 1) isAdmin = true;
+        }
+
         try {
             const flags = this.getUserFlags();
 

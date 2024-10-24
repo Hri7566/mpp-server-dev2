@@ -9,7 +9,7 @@ import {
     removeAllRolePermissions,
     removeRolePermission
 } from "~/data/permissions";
-import { builtinTags, removeTag, setBuiltinTag } from "../tags";
+import { builtinTags, getTag, removeTag, setBuiltinTag, setTag } from "../tags";
 import logger from "./logger";
 import { socketsByUUID } from "~/ws/Socket";
 
@@ -248,6 +248,65 @@ Command.addCommand(
             });
 
             return "Successfully sent announcement to all users.";
+        }
+    )
+);
+
+Command.addCommand(
+    new Command(
+        ["tag"],
+        "tag <set, remove, list> <user id> <builtin, custom> <[builtin id], [text] [color]>",
+        async msg => {
+            const method = msg.args[1];
+            const userId = msg.args[2];
+
+            if (!method || !userId) return "tag <set, remove, list> <user id>";
+
+            if (method === "set" || method === "change" || method === "add") {
+                const type = msg.args[3];
+                if (!type)
+                    return "tag <set> <user id> <builtin, custom> [<builtin id>, <text> <color>]";
+
+                if (type == "builtin") {
+                    const tag = msg.args[4];
+                    if (!tag)
+                        return "tag <set> <user id> <builtin> <builtin id>";
+                    await setBuiltinTag(userId, tag);
+                    return `Set builtin tag ${tag} for ${userId}`;
+                } else if (type == "custom") {
+                    if (!msg.args[4])
+                        return "tag <set> <user id> <custom> <text> <color>";
+                    const newargs = msg.args.slice(4);
+                    logger.debug(newargs);
+                    const comargs = newargs.join(" ").split(",");
+                    logger.debug(comargs);
+                    const text = comargs[0];
+                    const color = comargs.slice(1).join(", ");
+
+                    logger.debug(text, color);
+
+                    if (!text || !color)
+                        return "tag <set> <user id> <custom> <text> <color>";
+
+                    await setTag(userId, {
+                        text,
+                        color
+                    });
+
+                    return `Set custom tag [${text}, ${color}] for ${userId}`;
+                } else {
+                    return "tag <set> <user id> <builtin, custom> <[builtin id], [text] [color]>";
+                }
+            } else if (method === "remove" || method === "unset") {
+                if (Object.keys(builtinTags).includes(msg.args[3])) {
+                    await removeTag(userId);
+                }
+
+                return `Removed tag from ${userId}`;
+            } else if (method === "list") {
+                const tag = await getTag(userId);
+                return `Tag of ${userId}: ${JSON.stringify(tag)}`;
+            }
         }
     )
 );

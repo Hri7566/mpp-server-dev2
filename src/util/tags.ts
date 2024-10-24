@@ -76,3 +76,11 @@ export async function removeTag(userId: string) {
 
     propogateUser(user);
 }
+
+export async function getTag(userId: string) {
+    const user = await readUser(userId);
+    if (!user) return;
+
+    if (typeof user.tag !== "string") return;
+    return JSON.parse(user.tag);
+}

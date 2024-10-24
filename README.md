@@ -81,20 +81,20 @@ This has always been the future intention of this project.
 - [ ] MPP.com data message
     - Implement based on `spooky.js` given there is no official documentation
 - [ ] No cussing setting
-    - badwords.txt
+  - [ ] Decide on "lyrical notes"
 - [x] Full server-wide event bus
     - [ ] Channel events
     - [ ] Socket events
     - [ ] User data events
     - [ ] Permission-related events
 - [ ] Redo ratelimits
-- [ ] Test every frontend
 - [ ] Test fishing bot
 - [ ] Remote console
 - [x] Modify frontend to use templating
   - [x] index.html
-  - [ ] js files
-    - [ ] Completley reorganize script.js
+  - [x] Load configs on client
+  - [x] Tags
+    - [ ] Update tags live when changing from server console
 
 ## Backlog/Notes
 

@@ -1,3 +1,6 @@
 topButtons: none
 disableChat: false
 winter: false
+enableSlide: false
+createdRoomSocialLinks: false
+playingAloneSocialLinks: false

@@ -9,7 +9,8 @@ import { getMOTD } from "../util/motd";
 import nunjucks from "nunjucks";
 import type { Server, ServerWebSocket } from "bun";
 import { ConfigManager } from "~/util/config";
-import { config as usersConfig, usersConfigPath } from "./usersConfig";
+import { usersConfigPath } from "./usersConfig";
+import { ChannelList } from "~/channel/ChannelList";
 
 const logger = new Logger("WebSocket Server");
 
@@ -18,24 +19,33 @@ const logger = new Logger("WebSocket Server");
 export const httpIpCache = new Map<string, number>();
 
 interface IFrontendConfig {
-    topButtons: "original" | "none";
+    topButtons: "original" | "mppnet" | "none";
     disableChat: boolean;
     winter: boolean;
+    enableSlide: boolean;
+    createdRoomSocialLinks: boolean;
+    playingAloneSocialLinks: boolean;
 }
 
-const configPath = "config/frontend.yml";
+export const frontendConfigPath = "config/frontend.yml";
 
-const config = ConfigManager.loadConfig<IFrontendConfig>(configPath, {
-    topButtons: "original",
-    disableChat: false,
-    winter: false
-});
+export const frontendConfig = ConfigManager.loadConfig<IFrontendConfig>(
+    frontendConfigPath,
+    {
+        topButtons: "original",
+        disableChat: false,
+        winter: false,
+        enableSlide: false,
+        createdRoomSocialLinks: false,
+        playingAloneSocialLinks: false
+    }
+);
 
 /**
  * Get a rendered version of the index file
  * @returns Response with html in it
  */
-async function getIndex() {
+async function getIndex(path?: string, userID?: string) {
     // This tiny function took like an hour to write because
     // nobody realistically uses templates in 2024 and documents
     // it well enough to say what library they used
@@ -44,19 +54,27 @@ async function getIndex() {
 
     const index = Bun.file("./public/index.html");
 
-    const base64config = btoa(
-        JSON.stringify({
-            config: ConfigManager.getOriginalConfigObject(configPath),
-            usersConfig: ConfigManager.getOriginalConfigObject(usersConfigPath)
-        })
-    );
-
-    const rendered = nunjucks.renderString(await index.text(), {
+    const configs: Record<string, unknown> = {
         motd: getMOTD(),
-        config,
-        usersConfig,
-        base64config
-    });
+        config: ConfigManager.getOriginalConfigObject(frontendConfigPath),
+        usersConfig: ConfigManager.getOriginalConfigObject(usersConfigPath)
+    };
+
+    try {
+        if (typeof path === "string") {
+            const ch = ChannelList.getChannel(path.substring(1));
+            if (typeof ch !== "undefined") {
+                configs.urlChannel = ch.getInfo(userID);
+            }
+        }
+    } catch (err) {}
+
+    const base64config = btoa(JSON.stringify(configs));
+    configs.base64config = base64config;
+
+    logger.debug(configs);
+
+    const rendered = nunjucks.renderString(await index.text(), configs);
 
     const response = new Response(rendered);
     response.headers.set("Content-Type", "text/html");
@@ -99,6 +117,12 @@ export function startHTTPServer() {
 
             const file = path.join("./public/", url);
 
+            let _id;
+
+            try {
+                _id = createUserID(ip);
+            } catch (err) {}
+
             // Time for unreadable blocks of confusion
             try {
                 // Is it a file?
@@ -111,14 +135,14 @@ export function startHTTPServer() {
                         return new Response(data);
                     }
 
-                    return getIndex();
+                    return getIndex(url, _id);
                 }
 
                 // Return the index file, since it's a channel name or something
-                return getIndex();
+                return getIndex(url, _id);
             } catch (err) {
                 // Return the index file as a coverup of our extreme failure
-                return getIndex();
+                return getIndex(url, _id);
             }
         },
         websocket: {

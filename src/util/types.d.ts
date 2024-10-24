@@ -28,6 +28,7 @@ type TChannelFlags = Partial<{
     limit: number;
     owner_id: string;
     no_crown: boolean;
+    rainbow: boolean;
 }>;
 
 declare interface Tag {

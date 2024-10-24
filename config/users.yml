@@ -11,7 +11,7 @@ defaultFlags:
 
 # Whether or not to allow users to change their color.
 # Based on some reports, the MPP.com server stopped allowing this around 2016.
-enableColorChanging: false
+enableColorChanging: true
 
 # Whether to allow custom data inside note messages.
 # This was in the original server, but not in MPP.net's server do to stricter sanitization.
@@ -37,7 +37,7 @@ enableAdminEval: true
 # The token validation scheme. Valid values are "none", "jwt" and "uuid".
 # This server will still validate existing tokens generated with other schemes if not set to "none", mimicking MPP.net's server.
 # This is set to "none" by default because MPP.com does not have a token system.
-tokenAuth: none
+tokenAuth: jwt
 
 # The browser challenge scheme. Valid options are "none", "obf" and "basic".
 # This is to change what is sent in the "b" message.

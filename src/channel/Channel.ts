@@ -23,7 +23,7 @@ import {
     getChatHistory,
     deleteChatHistory
 } from "../data/history";
-import { mixin, darken, spoop_text } from "../util/helpers";
+import { mixin, darken, spoop_text, hsl2hex } from "../util/helpers";
 import type { User } from "@prisma/client";
 import { heapStats } from "bun:jsc";
 import {
@@ -203,6 +203,10 @@ export class Channel extends EventEmitter {
                 this.printMemoryInChat();
             }, 1000);
         }
+
+        if (this.getID() === "rainbowfest") {
+            this.setFlag("rainbow", true);
+        }
     }
 
     private alreadyBound = false;
@@ -219,6 +223,12 @@ export class Channel extends EventEmitter {
             // Propogate channel flags intended to be updated
             if (typeof this.flags.owner_id === "string") {
                 this.settings.owner_id = this.flags.owner_id;
+            }
+
+            if (this.flags.rainbow) {
+                this.startRainbow();
+            } else {
+                this.stopRainbow();
             }
 
             // this.logger.debug("update");
@@ -1398,6 +1408,30 @@ export class Channel extends EventEmitter {
     public setForceload(enable: boolean) {
         this.stays = enable;
         this.save();
+    }
+
+    private startedRainbow = false;
+    private rainbowInterval: Timer | undefined;
+    private rainbowHue = 0;
+
+    public startRainbow() {
+        if (this.startedRainbow) return;
+        this.startedRainbow = true;
+        this.rainbowInterval = setInterval(() => {
+            this.rainbowHue++;
+            while (this.rainbowHue > 360) this.rainbowHue -= 360;
+            while (this.rainbowHue < 0) this.rainbowHue += 360;
+            this.changeSettings({
+                color: hsl2hex(this.rainbowHue, 100, 75),
+                color2: hsl2hex(this.rainbowHue, 100, 25)
+            });
+        }, 1000 / 5);
+    }
+
+    public stopRainbow() {
+        if (!this.startedRainbow) return;
+        this.startedRainbow = false;
+        clearInterval(this.rainbowInterval);
     }
 }
 

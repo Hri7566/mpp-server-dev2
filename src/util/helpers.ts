@@ -46,20 +46,13 @@ export function hasOwn(obj: any, property: string | number | Symbol) {
  * @returns Darkened hex color
  */
 export function darken(color: string, amount = 0x40) {
-    const r = Math.max(
-        0,
-        parseInt(color.substring(1, 3), 16) - amount
-    );
-    const g = Math.max(
-        0,
-        parseInt(color.substring(3, 5), 16) - amount
-    );
-    const b = Math.max(
-        0,
-        parseInt(color.substring(5, 7), 16) - amount
-    );
+    const r = Math.max(0, parseInt(color.substring(1, 3), 16) - amount);
+    const g = Math.max(0, parseInt(color.substring(3, 5), 16) - amount);
+    const b = Math.max(0, parseInt(color.substring(5, 7), 16) - amount);
 
-    return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+    return `#${r.toString(16).padStart(2, "0")}${g
+        .toString(16)
+        .padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
 }
 
 // spooky.jsaurus
@@ -95,4 +88,27 @@ export function mixin(obj1: any, obj2: any) {
     for (const key of Object.keys(obj2)) {
         obj1[key] = obj2[key];
     }
+}
+
+/**
+ * HSL to hex color converter
+ * https://stackoverflow.com/questions/36721830/convert-hsl-to-rgb-and-hex
+ * @param h Hue (degrees)
+ * @param s Saturation (percentage)
+ * @param l Lightness (percentage)
+ * @returns
+ */
+export function hsl2hex(h: number, s: number, l: number) {
+    l /= 100;
+
+    const a = (s * Math.min(l, 1 - l)) / 100;
+    const f = (n: number) => {
+        const k = (n + h / 30) % 12;
+        const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+        return Math.round(255 * color)
+            .toString(16)
+            .padStart(2, "0"); // convert to Hex and prefix "0" if needed
+    };
+
+    return `#${f(0)}${f(8)}${f(4)}`;
 }
