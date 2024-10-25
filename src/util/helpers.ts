@@ -112,3 +112,7 @@ export function hsl2hex(h: number, s: number, l: number) {
 
     return `#${f(0)}${f(8)}${f(4)}`;
 }
+
+export function limit(num: number, min: number, max: number) {
+    return Math.min(Math.max(num, min), max);
+}

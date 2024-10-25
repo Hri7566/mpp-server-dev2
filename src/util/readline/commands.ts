@@ -12,6 +12,7 @@ import {
 import { builtinTags, getTag, removeTag, setBuiltinTag, setTag } from "../tags";
 import logger from "./logger";
 import { socketsByUUID } from "~/ws/Socket";
+import { createColor } from "../id";
 
 Command.addCommand(
     new Command(["help", "h", "commands", "cmds"], "help", msg => {
@@ -309,4 +310,13 @@ Command.addCommand(
             }
         }
     )
+);
+
+Command.addCommand(
+    new Command(["colortest", "ctest"], "colortest <user id>", async msg => {
+        const userId = msg.args[1];
+        const color = createColor(userId);
+
+        return `User color: ${color}`;
+    })
 );
