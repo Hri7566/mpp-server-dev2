@@ -2,9 +2,17 @@
 
 # mpp-server-dev2
 
+Multiplayer Piano server for [MPP.dev](https://www.multiplayerpiano.dev)
+
+## Quick Guide
+
+This server is both a websocket server for MPP clients and an HTTP server that serves the website itself. If you want to disable the website, you will have to disable file requests through means of code.
+
+## Description
+
 This is an MPP server currently in development for [MPP.dev](https://www.multiplayerpiano.dev). It is roughly feature complete, supporting many of the planned ideas already, but certain features that some users might want to use for another site are currently unimplemented, namely a more complicated scheme for the antibot system.
 
-This server uses Bun - not just the runtime, but the libraries as well. This is because Bun provides easy access to uWebSockets.js, a speedy implementation of WebSockets that heavily outperforms the old `ws` module that is used so frequently.
+This server uses Bun - not just the runtime, but the internal libraries as well. This is because Bun provides easy access to uWebSockets.js, a speedy implementation of WebSockets that heavily outperforms the old `ws` module that is used so frequently in other MPP servers and MPP-related code.
 
 I have tried to comply well with Brandon Lockaby's original MPP server so that this server stays widely accessible for any frontend implementation, including the ones used by MultiplayerPiano.net, LapisHusky's frontend, and the frontends used by nagalun's server, as well as the smnmpp and mpp.hri7566.info frontends.
 
@@ -73,13 +81,17 @@ This has always been the future intention of this project.
 ## TODO
 
 - [x] Token generation
-  - [ ] Frontend implementation
-- [ ] Permission groups and permissions
+  - [x] Frontend implementation
+  - [ ] Token generator
+  - [ ] Test if they even work correctly
+- [x] Permission groups and permissions
     - [x] Probable permission groups: owner, admin, mod, trialmod, default
     - [x] Setup tags for each permission group
     - [ ] Implement permissions into rest of server
-- [ ] MPP.com data message
+    - [ ] Probably already needs to be reworked, given the weird state of how tags work
+- [x] MPP.com data message
     - Implement based on `spooky.js` given there is no official documentation
+    - This could be useful for only a few things, but still good for debugging
 - [ ] No cussing setting
   - [ ] Decide on "lyrical notes"
 - [x] Full server-wide event bus
