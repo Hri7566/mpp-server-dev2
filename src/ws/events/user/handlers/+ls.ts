@@ -1,4 +1,4 @@
-import { ServerEventListener } from "../../../../util/types";
+import { ServerEventListener } from "~/util/types";
 
 export const plus_ls: ServerEventListener<"+ls"> = {
     id: "+ls",

@@ -4,7 +4,7 @@
  * Represents user connections
  */
 
-import { createColor, createID, createUserID } from "../util/id";
+import { createColor, createID, createUserID } from "~/util/id";
 import EventEmitter from "events";
 import type {
     IChannelInfo,
@@ -16,15 +16,15 @@ import type {
     Vector2,
     Notification,
     Tag
-} from "../util/types";
+} from "~/util/types";
 import type { User } from "@prisma/client";
-import { createUser, readUser, updateUser } from "../data/user";
+import { createUser, readUser, updateUser } from "~/data/user";
 import { eventGroups } from "./events";
 import { Gateway } from "./Gateway";
-import { Channel } from "../channel/Channel";
-import { ChannelList } from "../channel/ChannelList";
+import { Channel } from "~/channel/Channel";
+import { ChannelList } from "~/channel/ChannelList";
 import type { ServerWebSocket } from "bun";
-import { Logger } from "../util/Logger";
+import { Logger } from "~/util/Logger";
 import type {
     RateLimitConstructorList,
     RateLimitList
@@ -893,6 +893,30 @@ export class Socket extends EventEmitter {
     public unsubscribeFromCustom() {
         if (!this.isSubscribedToCustom) return;
         this.isSubscribedToCustom = false;
+    }
+
+    public override on(event: string, callback: (...args: any[]) => unknown) {
+        super.on(event, callback);
+        return this;
+    }
+
+    public override off(event: string, callback: (...args: any[]) => unknown) {
+        super.off(event, callback);
+        return this;
+    }
+
+    public override once(event: string, callback: (...args: any[]) => unknown) {
+        super.once(event, callback);
+        return this;
+    }
+
+    public override emit(event: string, ...args: any[]) {
+        try {
+            super.emit(event, ...args);
+            return true;
+        } catch (err) {
+            return false;
+        }
     }
 }
 

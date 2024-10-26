@@ -1,6 +1,6 @@
-import { ChannelList } from "../../../../channel/ChannelList";
-import { ServerEventListener } from "../../../../util/types";
-import { socketsByUUID } from "../../../Socket";
+import { ChannelList } from "~/channel/ChannelList";
+import { ServerEventListener } from "~/util/types";
+import { socketsByUUID } from "~/ws/Socket";
 
 export const rename_channel: ServerEventListener<"rename_channel"> = {
     id: "rename_channel",
@@ -10,7 +10,6 @@ export const rename_channel: ServerEventListener<"rename_channel"> = {
 
         const ch = socket.getCurrentChannel();
         if (!ch) return;
-
 
         const oldID = socket.currentChannelID;
 

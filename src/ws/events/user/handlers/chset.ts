@@ -1,4 +1,4 @@
-import { ServerEventListener } from "../../../../util/types";
+import { ServerEventListener } from "~/util/types";
 
 export const chset: ServerEventListener<"chset"> = {
     id: "chset",
@@ -12,7 +12,13 @@ export const chset: ServerEventListener<"chset"> = {
         const ch = socket.getCurrentChannel();
         if (!ch) return;
 
+        const flags = socket.getUserFlags();
+
         // Edit room now
-        ch.changeSettings(msg.set, false);
+        if (flags) {
+            ch.changeSettings(msg.set, flags.admin === 1);
+        } else {
+            ch.changeSettings(msg.set, false);
+        }
     }
 };

@@ -1,5 +1,5 @@
 import EventEmitter from "events";
-import { Logger } from "../util/Logger";
+import { Logger } from "~/util/Logger";
 import type {
     IChannelSettings,
     OutgoingSocketEvents,
@@ -10,20 +10,20 @@ import type {
     UserFlags,
     Tag,
     TChannelFlags
-} from "../util/types";
-import type { Socket } from "../ws/Socket";
+} from "~/util/types";
+import type { Socket } from "~/ws/Socket";
 import { validateChannelSettings } from "./settings";
-import { findSocketByPartID, socketsByUUID } from "../ws/Socket";
+import { findSocketByPartID, socketsByUUID } from "~/ws/Socket";
 import Crown from "./Crown";
 import { ChannelList } from "./ChannelList";
 import { config } from "./config";
-import { config as usersConfig } from "../ws/usersConfig";
+import { config as usersConfig } from "~/ws/usersConfig";
 import {
     saveChatHistory,
     getChatHistory,
     deleteChatHistory
-} from "../data/history";
-import { mixin, darken, spoop_text, hsl2hex } from "../util/helpers";
+} from "~/data/history";
+import { mixin, darken, spoop_text, hsl2hex } from "~/util/helpers";
 import type { User } from "@prisma/client";
 import { heapStats } from "bun:jsc";
 import {
@@ -52,6 +52,11 @@ interface ExtraPartData {
 
 type ExtraPart = IParticipant & ExtraPartData;
 
+/**
+ * A channel that can hold users.
+ *
+ * Any channel can have a crown, a list of banned users, chat history, and has flags.
+ */
 export class Channel extends EventEmitter {
     private settings: Partial<IChannelSettings>;
     private ppl = new Array<ExtraPart>();
@@ -150,7 +155,7 @@ export class Channel extends EventEmitter {
         // Copy default settings
         mixin(this.settings, config.defaultSettings);
 
-        if (owner_id) this.settings.owner_id = owner_id;
+        if (owner_id) this.setFlag("owner_id", owner_id);
 
         if (!this.isLobby()) {
             if (set) {
@@ -221,15 +226,7 @@ export class Channel extends EventEmitter {
 
         this.on("update", (self, uuid) => {
             // Propogate channel flags intended to be updated
-            if (typeof this.flags.owner_id === "string") {
-                this.settings.owner_id = this.flags.owner_id;
-            }
-
-            if (this.flags.rainbow) {
-                this.startRainbow();
-            } else {
-                this.stopRainbow();
-            }
+            this.emit("update_flags", self, uuid);
 
             // this.logger.debug("update");
             // Send updated info
@@ -249,8 +246,11 @@ export class Channel extends EventEmitter {
                 }
             }
 
+            // this.logger.debug("ppl length:", this.ppl.length);
+            // this.logger.debug("stays:", this.stays);
+
             if (this.ppl.length === 0 && !this.stays) {
-                if (config.channelDestroyTimeout) {
+                if (config.channelDestroyTimeout > 0) {
                     this.destroyTimeout = setTimeout(() => {
                         this.destroy();
                     }, config.channelDestroyTimeout);
@@ -264,6 +264,30 @@ export class Channel extends EventEmitter {
                 typeof this.destroyTimeout !== "undefined"
             ) {
                 clearTimeout(this.destroyTimeout);
+            }
+        });
+
+        this.on("update_flags", (self, uuid) => {
+            if (typeof this.flags.owner_id === "string") {
+                this.settings.owner_id = this.flags.owner_id;
+            } else {
+                delete this.settings.owner_id;
+            }
+
+            if (this.flags.rainbow) {
+                this.startRainbow();
+            } else {
+                this.stopRainbow();
+            }
+
+            if (this.flags.limit && config.sendLimit) {
+                this.settings.limit = this.flags.limit;
+            } else {
+                delete this.settings.limit;
+            }
+
+            if (this.flags.no_crown) {
+                delete this.crown;
             }
         });
 
@@ -341,10 +365,14 @@ export class Channel extends EventEmitter {
             }
         });
 
-        this.on("command", (msg, socket) => {
+        this.on("command", (msg, socket: Socket) => {
             const args = msg.message.split(" ");
             const cmd = args[0].substring(1);
-            const ownsChannel = this.hasUser(socket.getUserID());
+            const userID = socket.getUserID();
+            const ownsChannel =
+                this.hasUser(userID) &&
+                this.crown &&
+                this.crown.userId == userID;
 
             if (cmd === "help") {
             } else if (cmd === "mem") {
@@ -575,6 +603,14 @@ export class Channel extends EventEmitter {
     }
 
     /**
+     * Get this channel's settings
+     * @returns This channel's settings
+     */
+    public getSettings() {
+        return this.settings;
+    }
+
+    /**
      * Make a socket join this channel
      * @param socket Socket that is joining
      * @returns undefined
@@ -787,7 +823,7 @@ export class Channel extends EventEmitter {
                 }
             }
 
-            // Broadcast bye
+            // Broadcast bye (chown already sent update, so no need to update again)
             if (!hadCrown)
                 this.sendArray([
                     {
@@ -797,7 +833,7 @@ export class Channel extends EventEmitter {
                 ]);
 
             //this.logger.debug("Update from leave");
-            // this.emit("update", this);
+            if (this.ppl.length < 2) this.emit("update", this);
         } else {
             for (const p of this.ppl) {
                 if (!p.uuids.includes(socket.getUUID())) continue;
@@ -814,6 +850,13 @@ export class Channel extends EventEmitter {
         // TODO Use limit setting
 
         if (this.isTrueLobby() && this.ppl.length >= 20) {
+            return true;
+        }
+
+        if (
+            typeof this.settings.limit === "number" &&
+            this.ppl.length >= this.settings.limit
+        ) {
             return true;
         }
 
@@ -1005,13 +1048,12 @@ export class Channel extends EventEmitter {
      * Change ownership (don't forget to use crown.canBeSetBy if you're letting a user call this)
      * @param part Participant to give crown to (or undefined to drop crown)
      */
-    public chown(part?: IParticipant) {
-        if (this.crown) {
-            if (part) {
-                this.giveCrown(part);
-            } else {
-                this.dropCrown();
-            }
+    public chown(part?: IParticipant, admin = false) {
+        this.logger.debug("chown called");
+        if (part) {
+            this.giveCrown(part, admin);
+        } else {
+            this.dropCrown();
         }
     }
 
@@ -1041,38 +1083,38 @@ export class Channel extends EventEmitter {
      * Drop the crown (reset timer, and, if applicable, remove from user's head)
      */
     public dropCrown() {
-        if (this.crown) {
-            this.crown.time = Date.now();
+        if (!this.crown) return;
 
-            let socket: Socket | undefined;
-            if (this.crown.participantId)
-                socket = findSocketByPartID(this.crown.participantId);
+        this.crown.time = Date.now();
 
-            const x = Math.random() * 100;
-            const y1 = Math.random() * 100;
-            const y2 = y1 + Math.random() * (100 - y1);
+        let socket: Socket | undefined;
+        if (this.crown.participantId)
+            socket = findSocketByPartID(this.crown.participantId);
 
-            if (socket) {
-                const cursorPos = socket.getCursorPos();
+        const x = Math.random() * 100;
+        const y1 = Math.random() * 100;
+        const y2 = y1 + Math.random() * (100 - y1);
 
-                let cursorX = cursorPos.x;
-                if (typeof cursorPos.x === "string")
-                    cursorX = Number.parseInt(cursorPos.x);
+        if (socket) {
+            const cursorPos = socket.getCursorPos();
 
-                let cursorY = cursorPos.y;
-                if (typeof cursorPos.y === "string")
-                    cursorY = Number.parseInt(cursorPos.y);
-            }
+            let cursorX = cursorPos.x;
+            if (typeof cursorPos.x === "string")
+                cursorX = Number.parseInt(cursorPos.x);
 
-            // Screen positions
-            this.crown.startPos = { x, y: y1 };
-            this.crown.endPos = { x, y: y2 };
-
-            this.crown.participantId = undefined;
-
-            //this.logger.debug("Update from dropCrown");
-            this.emit("update", this);
+            let cursorY = cursorPos.y;
+            if (typeof cursorPos.y === "string")
+                cursorY = Number.parseInt(cursorPos.y);
         }
+
+        // Screen positions
+        this.crown.startPos = { x, y: y1 };
+        this.crown.endPos = { x, y: y2 };
+
+        this.crown.participantId = undefined;
+
+        //this.logger.debug("Update from dropCrown");
+        this.emit("update", this);
     }
 
     /**
@@ -1340,7 +1382,7 @@ export class Channel extends EventEmitter {
         val: TChannelFlags[K]
     ) {
         this.flags[key] = val;
-        this.logger.debug("Updating channel flag " + key + " to", val);
+        // this.logger.debug("Updating channel flag " + key + " to", val);
         this.emit("update", this);
     }
 
@@ -1351,6 +1393,14 @@ export class Channel extends EventEmitter {
      **/
     public getFlag<K extends keyof TChannelFlags>(key: K) {
         return this.flags[key];
+    }
+
+    /**
+     * Get the flags on this channel
+     * @returns This channel's flags
+     */
+    public getFlags() {
+        return this.flags;
     }
 
     /**

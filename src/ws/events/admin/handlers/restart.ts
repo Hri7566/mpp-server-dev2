@@ -1,6 +1,5 @@
-import { readUser, updateUser } from "../../../../data/user";
-import { ServerEventListener } from "../../../../util/types";
-import { findSocketsByUserID, socketsByUUID } from "../../../Socket";
+import { ServerEventListener } from "~/util/types";
+import { socketsByUUID } from "~/ws/Socket";
 
 let timeout: Timer;
 

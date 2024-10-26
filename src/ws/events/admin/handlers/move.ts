@@ -1,5 +1,5 @@
-import { ServerEventListener } from "../../../../util/types";
-import { socketsByUUID } from "../../../Socket";
+import { ServerEventListener } from "~/util/types";
+import { socketsByUUID } from "~/ws/Socket";
 
 export const move: ServerEventListener<"move"> = {
     id: "move",

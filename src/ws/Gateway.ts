@@ -12,7 +12,7 @@
  * and IP address instead sometime in the future.
  */
 
-import { Logger } from "../util/Logger";
+import { Logger } from "~/util/Logger";
 
 const logger = new Logger("Socket Gateway");
 

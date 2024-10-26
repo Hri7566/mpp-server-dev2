@@ -1,4 +1,4 @@
-import type { Socket } from "../ws/Socket";
+import type { Socket } from "~/ws/Socket";
 
 declare type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 
@@ -292,6 +292,11 @@ declare interface IncomingSocketEvents {
         _id?: string;
         key: string;
         value: unknown;
+    } & {
+        m: "ch_flag";
+        _id?: string;
+        key: string;
+        remove: boolean;
     };
 
     move: {

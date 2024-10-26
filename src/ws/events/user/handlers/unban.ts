@@ -1,4 +1,4 @@
-import { ServerEventListener } from "../../../../util/types";
+import { ServerEventListener } from "~/util/types";
 
 export const unban: ServerEventListener<"unban"> = {
     id: "unban",

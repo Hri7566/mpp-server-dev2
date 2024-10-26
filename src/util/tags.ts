@@ -1,9 +1,7 @@
-import { Socket } from "~/ws/Socket";
 import { ConfigManager } from "./config";
 import { Tag } from "./types";
-import { readUser, updateUser } from "~/data/user";
-import { prisma } from "~/data/prisma";
 import { User } from "@prisma/client";
+import { readUser, updateUser } from "~/data/user";
 import { ChannelList } from "~/channel/ChannelList";
 
 export const builtinTags = ConfigManager.loadConfig<Record<string, Tag>>(

@@ -1,5 +1,5 @@
-import { IParticipant, Vector2 } from "../util/types";
-import { Socket } from "../ws/Socket";
+import { IParticipant, Vector2 } from "~/util/types";
+import { Socket } from "~/ws/Socket";
 
 // shiny hat
 export class Crown {

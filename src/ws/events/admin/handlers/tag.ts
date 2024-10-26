@@ -1,7 +1,7 @@
-import { ChannelList } from "../../../../channel/ChannelList";
-import { readUser, updateUser } from "../../../../data/user";
-import { ServerEventListener } from "../../../../util/types";
-import { findSocketsByUserID } from "../../../Socket";
+import { ChannelList } from "~/channel/ChannelList";
+import { readUser, updateUser } from "~/data/user";
+import { ServerEventListener } from "~/util/types";
+import { findSocketsByUserID } from "~/ws/Socket";
 
 export const tag: ServerEventListener<"tag"> = {
     id: "tag",

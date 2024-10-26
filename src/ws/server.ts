@@ -1,11 +1,11 @@
-import { Logger } from "../util/Logger";
+import { Logger } from "~/util/Logger";
 import { createSocketID, createUserID } from "../util/id";
 import fs from "node:fs";
 import path from "node:path";
 import { handleMessage } from "./message";
 import { Socket, socketsByUUID } from "./Socket";
-import env from "../util/env";
-import { getMOTD } from "../util/motd";
+import env from "~/util/env";
+import { getMOTD } from "~/util/motd";
 import nunjucks from "nunjucks";
 import type { Server, ServerWebSocket } from "bun";
 import { ConfigManager } from "~/util/config";
@@ -25,6 +25,7 @@ interface IFrontendConfig {
     enableSlide: boolean;
     createdRoomSocialLinks: boolean;
     playingAloneSocialLinks: boolean;
+    motd: string;
 }
 
 export const frontendConfigPath = "config/frontend.yml";
@@ -37,7 +38,8 @@ export const frontendConfig = ConfigManager.loadConfig<IFrontendConfig>(
         winter: false,
         enableSlide: false,
         createdRoomSocialLinks: false,
-        playingAloneSocialLinks: false
+        playingAloneSocialLinks: false,
+        motd: "This site makes a lot of sound! You may want to adjust the volume before continuing."
     }
 );
 
@@ -75,7 +77,7 @@ async function getIndex(path?: string, userID?: string) {
     const base64config = btoa(JSON.stringify(configs));
     configs.base64config = base64config;
 
-    logger.debug(configs);
+    // logger.debug(configs);
 
     const rendered = nunjucks.renderString(await index.text(), configs);
 

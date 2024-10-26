@@ -1,4 +1,4 @@
-import { ServerEventListener } from "../../../../util/types";
+import { ServerEventListener } from "~/util/types";
 
 export const t: ServerEventListener<"t"> = {
     id: "t",
@@ -6,7 +6,7 @@ export const t: ServerEventListener<"t"> = {
         // Ping
 
         if (socket.rateLimits)
-            if (!socket.rateLimits.normal.t.attempt()) return
+            if (!socket.rateLimits.normal.t.attempt()) return;
 
         if (msg.e) {
             if (typeof msg.e !== "number") return;

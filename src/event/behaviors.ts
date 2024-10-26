@@ -46,7 +46,10 @@ export function loadBehaviors() {
             if (msg.target.mode === "id") {
                 if (typeof msg.target.id !== "string") return;
 
-                if (receiver.getUserID() === msg.target.id) {
+                if (
+                    receiver.getUserID() === msg.target.id ||
+                    receiver.getParticipantID() === msg.target.id
+                ) {
                     receiver.sendArray([
                         {
                             m: "custom",

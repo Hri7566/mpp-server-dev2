@@ -1,5 +1,5 @@
-import { ConfigManager } from "../util/config";
-import { IChannelSettings } from "../util/types";
+import { ConfigManager } from "~/util/config";
+import { IChannelSettings } from "~/util/types";
 
 interface ChannelConfig {
     forceLoad: string[];

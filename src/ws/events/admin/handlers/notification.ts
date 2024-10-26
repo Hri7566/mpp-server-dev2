@@ -1,8 +1,7 @@
 import { notificationConfig as config } from "~/util/notificationConfig";
-import { ChannelList } from "../../../../channel/ChannelList";
-import { ConfigManager } from "../../../../util/config";
-import { ServerEventListener } from "../../../../util/types";
-import { socketsByUUID } from "../../../Socket";
+import { ChannelList } from "~/channel/ChannelList";
+import { ServerEventListener } from "~/util/types";
+import { socketsByUUID } from "~/ws/Socket";
 
 export const notification: ServerEventListener<"notification"> = {
     id: "notification",

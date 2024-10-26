@@ -1,7 +1,6 @@
-import { ChannelList } from "../../../../channel/ChannelList";
-import { readUser, updateUser } from "../../../../data/user";
-import { ServerEventListener } from "../../../../util/types";
-import { Logger } from "../../../../util/Logger";
+import { ChannelList } from "~/channel/ChannelList";
+import { readUser, updateUser } from "~/data/user";
+import { ServerEventListener } from "~/util/types";
 
 export const color: ServerEventListener<"color"> = {
     id: "color",

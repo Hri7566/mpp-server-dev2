@@ -1,6 +1,6 @@
-import { Logger } from "../util/Logger";
+import { Logger } from "~/util/Logger";
 import type { Socket } from "./Socket";
-import { hasOwn } from "../util/helpers";
+import { hasOwn } from "~/util/helpers";
 
 // const logger = new Logger("Message Handler");
 // this one sounds cooler

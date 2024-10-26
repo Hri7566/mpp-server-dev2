@@ -1,4 +1,4 @@
-import { type Socket, findSocketByPartID } from "../ws/Socket";
+import { type Socket, findSocketByPartID } from "~/ws/Socket";
 import type Channel from "./Channel";
 
 const onChannelUpdate = (channel: Channel) => {
@@ -53,7 +53,9 @@ export class ChannelList {
     }
 
     public static getChannelFuzzy(text: string) {
-        return this.list.find(ch => ch.getID().toLowerCase() == text.toLowerCase());
+        return this.list.find(
+            ch => ch.getID().toLowerCase() == text.toLowerCase()
+        );
     }
 
     public static getPublicList() {

@@ -1,6 +1,6 @@
-import type { Channel } from "../../../../channel";
-import { ChannelList } from "../../../../channel/ChannelList";
-import { ServerEventListener } from "../../../../util/types";
+import type { Channel } from "~/channel";
+import { ChannelList } from "~/channel/ChannelList";
+import { ServerEventListener } from "~/util/types";
 
 export const admin_chat: ServerEventListener<"admin_chat"> = {
     id: "admin_chat",

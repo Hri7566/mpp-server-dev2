@@ -1,8 +1,5 @@
-import { Socket } from "../../../Socket";
-import {
-    ServerEventListener,
-    IncomingSocketEvents
-} from "../../../../util/types";
+import { Socket } from "~/ws/Socket";
+import { ServerEventListener, IncomingSocketEvents } from "~/util/types";
 
 // https://stackoverflow.com/questions/64509631/is-there-a-regex-to-match-all-unicode-emojis
 const emojiRegex =

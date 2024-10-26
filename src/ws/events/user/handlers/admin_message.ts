@@ -1,6 +1,5 @@
-import { Logger } from "../../../../util/Logger";
-import env from "../../../../util/env";
-import { ServerEventListener } from "../../../../util/types";
+import env from "~/util/env";
+import { ServerEventListener } from "~/util/types";
 
 export const admin_message: ServerEventListener<"admin message"> = {
     id: "admin message",

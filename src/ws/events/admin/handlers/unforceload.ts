@@ -1,4 +1,4 @@
-import { forceloadChannel, unforceloadChannel } from "~/channel/forceload";
+import { unforceloadChannel } from "~/channel/forceload";
 import { ServerEventListener } from "~/util/types";
 
 export const unforceload: ServerEventListener<"unforceload"> = {

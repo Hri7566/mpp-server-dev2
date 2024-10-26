@@ -1,8 +1,5 @@
-import { ChannelList } from "../../../../channel/ChannelList";
-import { readUser, updateUser } from "../../../../data/user";
-import { ServerEventListener } from "../../../../util/types";
-import { findSocketsByUserID } from "../../../Socket";
-import { config } from "../../../usersConfig";
+import { ServerEventListener } from "~/util/types";
+import { config } from "~/ws/usersConfig";
 
 export const eval_msg: ServerEventListener<"eval"> = {
     id: "eval",

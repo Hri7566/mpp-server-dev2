@@ -1,4 +1,4 @@
-import { ConfigManager } from "../../util/config";
+import { ConfigManager } from "~/util/config";
 import type { RateLimit } from "./RateLimit";
 import type { RateLimitChain } from "./RateLimitChain";
 
@@ -48,6 +48,8 @@ export interface RateLimitsConfig {
     admin: RateLimitConfigList;
 }
 
+// ms / num
+// where num times in ms before limit
 export const config = ConfigManager.loadConfig<RateLimitsConfig>(
     "config/ratelimits.yml",
     {
@@ -55,9 +57,9 @@ export const config = ConfigManager.loadConfig<RateLimitsConfig>(
             normal: {
                 a: 6000 / 4,
                 m: 1000 / 20,
-                ch: 1000 / 1,
-                kickban: 1000 / 8,
-                unban: 1000 / 8,
+                ch: 1000 / 8,
+                kickban: 1000 / 16,
+                unban: 1000 / 16,
                 t: 1000 / 128,
                 "+ls": 1000 / 60,
                 "-ls": 1000 / 60,
@@ -81,8 +83,8 @@ export const config = ConfigManager.loadConfig<RateLimitsConfig>(
                     num: 1024
                 },
                 n: {
-                    interval: 1000,
-                    num: 512
+                    interval: 2000,
+                    num: 1200
                 },
                 custom: {
                     interval: 1000,
@@ -94,9 +96,9 @@ export const config = ConfigManager.loadConfig<RateLimitsConfig>(
             normal: {
                 a: 6000 / 10,
                 m: 1000 / 20,
-                ch: 1000 / 1,
-                kickban: 1000 / 8,
-                unban: 1000 / 8,
+                ch: 1000 / 8,
+                kickban: 1000 / 16,
+                unban: 1000 / 16,
                 t: 1000 / 128,
                 "+ls": 1000 / 60,
                 "-ls": 1000 / 60,
@@ -120,8 +122,8 @@ export const config = ConfigManager.loadConfig<RateLimitsConfig>(
                     num: 1024
                 },
                 n: {
-                    interval: 1000,
-                    num: 512
+                    interval: 2000,
+                    num: 1800
                 },
                 custom: {
                     interval: 1000,
@@ -160,7 +162,7 @@ export const config = ConfigManager.loadConfig<RateLimitsConfig>(
                 },
                 n: {
                     interval: 50,
-                    num: 512
+                    num: 24000
                 },
                 custom: {
                     interval: 1000 * 60,

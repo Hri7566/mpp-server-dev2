@@ -1,8 +1,7 @@
 import { readFileSync } from "fs";
-import { readUser, updateUser } from "../data/user";
-import { Gateway } from "../ws/Gateway";
-import { config } from "../ws/usersConfig";
-import env from "./env";
+import { readUser, updateUser } from "~/data/user";
+import { Gateway } from "~/ws/Gateway";
+import { config } from "~/ws/usersConfig";
 import { Logger } from "./Logger";
 import jwt from "jsonwebtoken";
 

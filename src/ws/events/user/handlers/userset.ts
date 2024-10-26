@@ -1,5 +1,5 @@
-import { ServerEventListener } from "../../../../util/types";
-import { config } from "../../../usersConfig";
+import { ServerEventListener } from "~/util/types";
+import { config } from "~/ws/usersConfig";
 
 export const userset: ServerEventListener<"userset"> = {
     id: "userset",

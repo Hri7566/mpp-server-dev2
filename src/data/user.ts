@@ -1,7 +1,7 @@
 import { User } from "@prisma/client";
 import { prisma } from "./prisma";
-import { Tag, UserFlags } from "../util/types";
-import { config } from "../ws/usersConfig";
+import { Tag, UserFlags } from "~/util/types";
+import { config } from "~/ws/usersConfig";
 
 export async function createUser(
     _id: string,

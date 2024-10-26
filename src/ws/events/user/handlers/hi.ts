@@ -2,9 +2,8 @@ import { getUserPermissions } from "~/data/permissions";
 import { Logger } from "~/util/Logger";
 import { getMOTD } from "~/util/motd";
 import { createToken, getToken, validateToken } from "~/util/token";
-import type { ServerEventListener, IncomingSocketEvents } from "~/util/types";
-import type { Socket } from "~/ws/Socket";
-import { config, usersConfigPath } from "~/ws/usersConfig";
+import type { ServerEventListener } from "~/util/types";
+import { config } from "~/ws/usersConfig";
 
 const logger = new Logger("Hi handler");
 

@@ -1,6 +1,6 @@
 import { createEnv } from "@t3-oss/env-core";
 import { z } from "zod";
-import { config } from "../ws/usersConfig";
+import { config } from "~/ws/usersConfig";
 
 // Best way to do env ever
 export const env = createEnv({
@@ -9,7 +9,10 @@ export const env = createEnv({
         HOST: z.union([z.string().url(), z.string().ip()]).optional(),
         SALT: z.string().min(10),
         ADMIN_PASS: z.string(),
-        COLOR_SALT: config.colorGeneration == "mpp" ? z.string().min(10) : z.string().optional(),
+        COLOR_SALT:
+            config.colorGeneration == "mpp"
+                ? z.string().min(10)
+                : z.string().optional()
     },
     isServer: true,
     // Bun loads process.env automatically so we don't have to use modules

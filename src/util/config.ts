@@ -41,8 +41,6 @@ export class ConfigManager {
         defaultConfig: T,
         saveDefault = true
     ): T {
-        const self = this;
-
         // Config exists?
         if (existsSync(configPath)) {
             // Load config

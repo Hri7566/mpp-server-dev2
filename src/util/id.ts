@@ -1,7 +1,7 @@
-import { createHash, randomBytes } from "crypto";
+import { createHash } from "crypto";
 import env from "./env";
-import { limit, spoop_text } from "./helpers";
-import { config } from "../ws/usersConfig";
+import { spoop_text } from "./helpers";
+import { config } from "~/ws/usersConfig";
 import { Logger } from "./Logger";
 
 const logger = new Logger("IDGen");

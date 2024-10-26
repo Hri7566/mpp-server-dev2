@@ -1,7 +1,6 @@
 import { ConfigManager } from "~/util/config";
 import { prisma } from "./prisma";
 import { getRoles } from "./role";
-import { permission } from "process";
 import { Logger } from "~/util/Logger";
 
 export const config = ConfigManager.loadConfig<Record<string, string[]>>(

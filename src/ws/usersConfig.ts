@@ -1,5 +1,5 @@
-import { ConfigManager } from "../util/config";
-import type { IParticipant, UserFlags } from "../util/types";
+import { ConfigManager } from "~/util/config";
+import type { IParticipant, UserFlags } from "~/util/types";
 
 export interface UsersConfig {
     defaultName: string;

@@ -1,4 +1,4 @@
-import { ServerEventListener } from "../../../../util/types";
+import { ServerEventListener } from "~/util/types";
 
 export const clear_chat: ServerEventListener<"clear_chat"> = {
     id: "clear_chat",

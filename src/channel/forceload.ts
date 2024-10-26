@@ -1,6 +1,6 @@
 import { Channel } from "./Channel";
 import { config } from "./config";
-import { Logger } from "../util/Logger";
+import { Logger } from "~/util/Logger";
 import { ChannelList } from "./ChannelList";
 
 // Channel forceloader (cringe)

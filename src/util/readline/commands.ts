@@ -62,30 +62,65 @@ Command.addCommand(
 );
 
 Command.addCommand(
-    new Command(["list", "ls"], "list <channels, users>", async msg => {
-        if (msg.args.length > 1) {
-            if (msg.args[1] == "channels") {
-                return (
-                    "Channels:\n- " +
-                    ChannelList.getList()
-                        .map(ch => ch.getID())
-                        .join("\n- ")
-                );
-            } else if (msg.args[1] == "users") {
-                var user = getUsers();
-                var users = "";
-                (await user).users.forEach(u => {
-                    users += `\n- [${u.id}]: ${u.name}`;
-                });
+    new Command(
+        ["list", "ls"],
+        "list <channels, users, sockets>",
+        async msg => {
+            if (msg.args.length > 1) {
+                if (msg.args[1] == "channels") {
+                    return (
+                        "Channels:\n- " +
+                        ChannelList.getList()
+                            .map(
+                                ch =>
+                                    `${ch.getID()} - ${JSON.stringify(
+                                        ch.getSettings()
+                                    )}`
+                            )
+                            .join("\n")
+                    );
+                } else if (msg.args[1] == "users") {
+                    let user = await getUsers();
+                    let users = "";
 
-                return "Users: " + (await (await user).count) + users;
+                    user.users.forEach(u => {
+                        users += `\n- [${u.id}]: ${u.name}`;
+                    });
+
+                    return "Users: " + user.count + users;
+                } else if (msg.args[1] == "sockets") {
+                    const sockets = [...socketsByUUID.values()];
+                    const list = [];
+
+                    for (const sock of sockets) {
+                        const part = sock.getParticipant();
+                        if (part) {
+                            let str = `[${sock.getUUID()}] ${part.id} - ${
+                                part.name
+                            } (${part.color})${
+                                part.tag ? ` ${JSON.stringify(part.tag)} ` : ""
+                            }`;
+
+                            const ch = sock.getCurrentChannel();
+
+                            if (ch) str += ` - ${ch.getID()}`;
+                            list.push(str);
+                        } else {
+                            list.push(
+                                `[${sock.getUUID()}] (no participant loaded)`
+                            );
+                        }
+                    }
+
+                    return `List of connected sockets:\n${list.join("\n")}`;
+                } else {
+                    return "list <channels, users>";
+                }
             } else {
                 return "list <channels, users>";
             }
-        } else {
-            return "list <channels, users>";
         }
-    })
+    )
 );
 
 Command.addCommand(
@@ -278,13 +313,13 @@ Command.addCommand(
                     if (!msg.args[4])
                         return "tag <set> <user id> <custom> <text> <color>";
                     const newargs = msg.args.slice(4);
-                    logger.debug(newargs);
+                    //logger.debug(newargs);
                     const comargs = newargs.join(" ").split(",");
-                    logger.debug(comargs);
+                    //logger.debug(comargs);
                     const text = comargs[0];
                     const color = comargs.slice(1).join(", ");
 
-                    logger.debug(text, color);
+                    //logger.debug(text, color);
 
                     if (!text || !color)
                         return "tag <set> <user id> <custom> <text> <color>";
@@ -299,10 +334,7 @@ Command.addCommand(
                     return "tag <set> <user id> <builtin, custom> <[builtin id], [text] [color]>";
                 }
             } else if (method === "remove" || method === "unset") {
-                if (Object.keys(builtinTags).includes(msg.args[3])) {
-                    await removeTag(userId);
-                }
-
+                await removeTag(userId);
                 return `Removed tag from ${userId}`;
             } else if (method === "list") {
                 const tag = await getTag(userId);
