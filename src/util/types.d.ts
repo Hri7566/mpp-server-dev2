@@ -26,9 +26,10 @@ declare type UserFlags = Partial<{
 
 type TChannelFlags = Partial<{
     limit: number;
-    owner_id: string;
+    owner_id: string; // brandonism
     no_crown: boolean;
     rainbow: boolean;
+    player_colors: boolean;
 }>;
 
 declare interface Tag {
@@ -223,30 +224,35 @@ declare interface IncomingSocketEvents {
     // Admin
 
     color: {
+        // brandonism
         m: "color";
         _id: string;
         color: string;
     };
 
     name: {
+        // brandonism
         m: "name";
         _id: string;
         name: string;
     };
 
     setcolor: {
+        // mppclone
         m: "setcolor";
         _id: string;
         color: string;
     };
 
     setname: {
+        // mppclone
         m: "setname";
         _id: string;
         color: string;
     };
 
     user_flag: {
+        // brandonism
         m: "user_flag";
         _id: string;
         key: keyof UserFlags;
@@ -268,6 +274,7 @@ declare interface IncomingSocketEvents {
     };
 
     notification: {
+        // brandonism
         m: "notification";
         targetChannel?: string;
         targetUser?: string;

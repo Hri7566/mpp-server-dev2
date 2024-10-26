@@ -13,6 +13,8 @@ import { name } from "./handlers/name";
 import { notification } from "./handlers/notification";
 import { rename_channel } from "./handlers/rename_channel";
 import { restart } from "./handlers/restart";
+import { setcolor } from "./handlers/setcolor";
+import { setname } from "./handlers/setname";
 import { tag } from "./handlers/tag";
 import { unforceload } from "./handlers/unforceload";
 import { user_flag } from "./handlers/user_flag";
@@ -35,7 +37,9 @@ EVENT_GROUP_ADMIN.addMany(
     tag,
     ch_flag,
     forceload,
-    unforceload
+    unforceload,
+    setcolor,
+    setname
 );
 
 eventGroups.push(EVENT_GROUP_ADMIN);
