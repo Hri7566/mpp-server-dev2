@@ -65,7 +65,7 @@ async function getIndex(path?: string, userID?: string) {
     try {
         if (typeof path === "string") {
             const ch = ChannelList.getChannel(
-                path == "/" ? "lobby" : path.substring(1)
+                path == "/" ? "lobby" : decodeURIComponent(path.substring(1))
             );
 
             if (typeof ch !== "undefined") {
