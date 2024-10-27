@@ -3,6 +3,7 @@ import { Tag } from "./types";
 import { User } from "@prisma/client";
 import { readUser, updateUser } from "~/data/user";
 import { ChannelList } from "~/channel/ChannelList";
+import { bus } from "~/event/bus";
 
 export const builtinTags = ConfigManager.loadConfig<Record<string, Tag>>(
     "config/tags.yml",
@@ -35,11 +36,7 @@ export const builtinTags = ConfigManager.loadConfig<Record<string, Tag>>(
 );
 
 function propogateUser(user: User) {
-    const channelList = ChannelList.getList();
-
-    for (const ch of channelList) {
-        ch.emit("user data update", user);
-    }
+    bus.emit("user data update", user);
 }
 
 export async function setBuiltinTag(userId: string, tagId: string) {

@@ -328,6 +328,11 @@ declare interface IncomingSocketEvents {
         m: "eval";
         str: string;
     };
+
+    remove_tag: {
+        m: "remove_tag";
+        _id: string;
+    };
 }
 
 declare interface OutgoingSocketEvents {

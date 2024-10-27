@@ -11,6 +11,7 @@ import { forceload } from "./handlers/forceload";
 import { move } from "./handlers/move";
 import { name } from "./handlers/name";
 import { notification } from "./handlers/notification";
+import { remove_tag } from "./handlers/remove_tag";
 import { rename_channel } from "./handlers/rename_channel";
 import { restart } from "./handlers/restart";
 import { setcolor } from "./handlers/setcolor";
@@ -39,7 +40,8 @@ EVENT_GROUP_ADMIN.addMany(
     forceload,
     unforceload,
     setcolor,
-    setname
+    setname,
+    remove_tag
 );
 
 eventGroups.push(EVENT_GROUP_ADMIN);

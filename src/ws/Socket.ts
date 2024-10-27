@@ -43,7 +43,7 @@ import {
     validatePermission
 } from "~/data/permissions";
 import { getRoles } from "~/data/role";
-import { setTag } from "~/util/tags";
+import { removeTag, setTag } from "~/util/tags";
 import { bus } from "~/event/bus";
 import { notificationConfig } from "~/util/notificationConfig";
 
@@ -812,10 +812,18 @@ export class Socket extends EventEmitter {
      * @param text Text of the tag
      * @param color Color of the tag
      **/
-    public setTag(text: string, color: string) {
+    public async setTag(text: string, color: string) {
         //logger.debug("Setting tag:", text, color);
         if (!this.user) return;
-        setTag(this.user.id, { text, color });
+        await setTag(this.user.id, { text, color });
+    }
+
+    /**
+     * Remove this socket's user's tag
+     */
+    public async removeTag() {
+        if (!this.user) return;
+        await removeTag(this.user.id);
     }
 
     /**

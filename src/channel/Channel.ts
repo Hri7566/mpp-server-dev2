@@ -1049,7 +1049,7 @@ export class Channel extends EventEmitter {
      * @param part Participant to give crown to (or undefined to drop crown)
      */
     public chown(part?: IParticipant, admin = false) {
-        this.logger.debug("chown called");
+        // this.logger.debug("chown called");
         if (part) {
             this.giveCrown(part, admin);
         } else {

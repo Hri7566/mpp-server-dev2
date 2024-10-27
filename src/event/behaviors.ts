@@ -83,5 +83,11 @@ export function loadBehaviors() {
         }
     });
 
+    bus.on("user data update", user => {
+        for (const ch of ChannelList.getList()) {
+            ch.emit("user data update", user);
+        }
+    });
+
     bus.emit("ready");
 }
