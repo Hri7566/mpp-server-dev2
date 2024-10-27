@@ -982,6 +982,17 @@ export class Channel extends EventEmitter {
                     if (part.id !== this.crown.participantId) return;
                 }
             }
+
+            if (this.flags.player_colors) {
+                if (this.getSetting("color") !== part.color) {
+                    this.changeSettings(
+                        {
+                            color: part.color
+                        },
+                        true
+                    );
+                }
+            }
         }
 
         const clientMsg: OutgoingSocketEvents["n"] = {
@@ -1128,7 +1139,7 @@ export class Channel extends EventEmitter {
         banner?: string
     ) {
         const now = Date.now();
-        if (t < 0 || t > 300 * 60 * 1000) return;
+        if (t < 0 || t > config.maxBanMinutes * 60 * 1000) return;
 
         let shouldUpdate = false;
 

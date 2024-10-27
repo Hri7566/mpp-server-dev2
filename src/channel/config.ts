@@ -11,6 +11,7 @@ interface ChannelConfig {
     sendLimit: boolean;
     chownOnRejoin: boolean;
     channelDestroyTimeout: number;
+    maxBanMinutes: number;
 }
 
 export const config = ConfigManager.loadConfig<ChannelConfig>(
@@ -44,6 +45,7 @@ export const config = ConfigManager.loadConfig<ChannelConfig>(
         fullChannel: "test/awkward",
         sendLimit: false,
         chownOnRejoin: true,
-        channelDestroyTimeout: 1000
+        channelDestroyTimeout: 1000,
+        maxBanMinutes: 60
     }
 );
