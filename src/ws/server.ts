@@ -26,6 +26,7 @@ interface IFrontendConfig {
     createdRoomSocialLinks: boolean;
     playingAloneSocialLinks: boolean;
     motd: string;
+    hideChatOnDisconnect: boolean;
 }
 
 export const frontendConfigPath = "config/frontend.yml";
@@ -39,7 +40,8 @@ export const frontendConfig = ConfigManager.loadConfig<IFrontendConfig>(
         enableSlide: false,
         createdRoomSocialLinks: false,
         playingAloneSocialLinks: false,
-        motd: "This site makes a lot of sound! You may want to adjust the volume before continuing."
+        motd: "This site makes a lot of sound! You may want to adjust the volume before continuing.",
+        hideChatOnDisconnect: false
     }
 );
 
