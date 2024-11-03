@@ -19,7 +19,7 @@ const logger = new Logger("WebSocket Server");
 export const httpIpCache = new Map<string, number>();
 
 interface IFrontendConfig {
-    topButtons: "original" | "mppnet" | "none";
+    topButtons: "original" | "mppnet" | "git-links" | "none";
     disableChat: boolean;
     winter: boolean;
     enableSlide: boolean;
@@ -34,7 +34,7 @@ export const frontendConfigPath = "config/frontend.yml";
 export const frontendConfig = ConfigManager.loadConfig<IFrontendConfig>(
     frontendConfigPath,
     {
-        topButtons: "original",
+        topButtons: "git-links",
         disableChat: false,
         winter: false,
         enableSlide: false,
@@ -74,7 +74,7 @@ async function getIndex(path?: string, userID?: string) {
                 configs.urlChannel = ch.getInfo(userID);
             }
         }
-    } catch (err) {}
+    } catch (err) { }
 
     const base64config = btoa(JSON.stringify(configs));
     configs.base64config = base64config;
@@ -128,7 +128,7 @@ export function startHTTPServer() {
 
             try {
                 _id = createUserID(ip);
-            } catch (err) {}
+            } catch (err) { }
 
             // Time for unreadable blocks of confusion
             try {
