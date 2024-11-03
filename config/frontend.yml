@@ -6,3 +6,4 @@ createdRoomSocialLinks: false
 playingAloneSocialLinks: false
 motd: This site makes a lot of sound! You may want to adjust the volume before
     continuing.
+hideChatOnDisconnect: false
