@@ -42,10 +42,10 @@ tokenAuth: jwt
 # The browser challenge scheme. Valid options are "none", "obf" and "basic".
 # This is to change what is sent in the "b" message.
 # "none" will disable the browser challenge,
-# "obf" will sent an obfuscated function to the client,
+# "obf" will send an obfuscated function to the client,
 # and "basic" will just send a simple function that expects a boolean.
 # FIXME Note that "obf" is not implemented yet, and has undefined behavior.
-browserChallenge: none
+browserChallenge: basic
 
 # Scheme for generating user IDs.
 # Valid options are "random", "sha256", "mpp" and "uuid".
