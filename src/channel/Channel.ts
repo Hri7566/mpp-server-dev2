@@ -181,14 +181,16 @@ export class Channel extends EventEmitter {
                 }
             }
 
-            // We are not a lobby, so we probably have a crown
-            // this.getFlag("no_crown");
-            this.crown = new Crown();
+            if (!config.disableCrown) {
+                // We are not a lobby, so we probably have a crown
+                // this.getFlag("no_crown");
+                this.crown = new Crown();
 
-            // ...and, possibly, an owner, too
-            if (creator) {
-                const part = creator.getParticipant();
-                if (part) this.giveCrown(part, true, false);
+                // ...and, possibly, an owner, too
+                if (creator) {
+                    const part = creator.getParticipant();
+                    if (part) this.giveCrown(part, true, false);
+                }
             }
         } else {
             this.settings = config.lobbySettings;
