@@ -8,14 +8,27 @@ export const admin_message: ServerEventListener<"admin message"> = {
         if (socket.rateLimits)
             if (!socket.rateLimits.normal["admin message"].attempt()) return;
 
-        if (typeof msg.password !== "string") {
-            socket.gateway.hasSentInvalidAdminMessage = true;
-            return;
+        const flags = socket.getUserFlags();
+
+        let hasFlag = false;
+
+        if (flags) {
+            // Sometimes we don't use passwords
+            if (flags.admin) hasFlag = true;
         }
 
-        if (msg.password !== env.ADMIN_PASS) {
-            socket.gateway.hasSentInvalidAdminMessage = true;
-            return;
+        if (!hasFlag) {
+            // Did they send some kind of password?
+            if (typeof msg.password !== "string") {
+                socket.gateway.hasSentInvalidAdminMessage = true;
+                return;
+            }
+
+            // Is the password correct?
+            if (msg.password !== env.ADMIN_PASS) {
+                socket.gateway.hasSentInvalidAdminMessage = true;
+                return;
+            }
         }
 
         // Probably shouldn't be using password auth in 2024
