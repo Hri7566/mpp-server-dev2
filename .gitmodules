@@ -1,0 +1,4 @@
+[submodule "public"]
+	path = public
+	url = git@git.hri7566.info:Hri7566/mpp-frontend-dev
+	branch = dev2
