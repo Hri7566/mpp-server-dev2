@@ -52,18 +52,20 @@ export const hi: ServerEventListener<"hi"> = {
 
         if (config.tokenAuth !== "none") {
             if (typeof msg.token !== "string") {
-                socket.gateway.hasSentToken = true;
-
                 // Get a saved token
                 token = await getToken(socket.getUserID());
+
+                // Does it exist?
                 if (typeof token !== "string") {
                     // Generate a new one
                     token = await createToken(
                         socket.getUserID(),
                         socket.gateway
                     );
+
                     socket.gateway.isTokenValid = true;
 
+                    // Does it exist? (again)
                     if (typeof token !== "string") {
                         logger.warn(
                             `Unable to generate token for user ${socket.getUserID()}`
@@ -73,6 +75,8 @@ export const hi: ServerEventListener<"hi"> = {
                     }
                 }
             } else {
+                socket.gateway.hasSentToken = true;
+
                 // Validate the token
                 const valid = await validateToken(
                     socket.getUserID(),

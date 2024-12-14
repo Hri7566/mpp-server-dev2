@@ -45,3 +45,9 @@ chownOnRejoin: true
 
 # Time in milliseconds to wait before destroying an empty channel
 channelDestroyTimeout: 1000
+
+# Maximum allowed kickban time in minutes
+maxBanMinutes: 60
+
+# Whether to disable the crown entirely
+disableCrown: false

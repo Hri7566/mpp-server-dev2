@@ -1,8 +1,32 @@
-topButtons: none
+# Which top buttons to show in the top right corner of the page.
+# "git-links" shows a link to the server source,
+# "original" shows the kitten1.png button that brings up the "more" page,
+# "mppnet" shows the links from multiplayerpiano.net,
+# and "none" will hide the top buttons entirely.
+# The size of the `#names` div will not change.
+topButtons: git-links
+
+# Whether to hide the `#chat` div.
 disableChat: false
-winter: false
+
+# Whether to enable snowflakes.
+winter: true
+
+# Whether to enable the previously-broken piano sliding transition.
 enableSlide: false
+
+# Whether to show social links in the notification for creating new rooms.
 createdRoomSocialLinks: false
+
+# Whether to show social links in the notification for creating private rooms.
 playingAloneSocialLinks: false
+
+# The text that appears in the startup modal.
+# The startup modal dialog is somewhat required to enable sound on the page in modern browsers.
+# This is because of the change that disallows ads to autoplay audio, which will make the piano silent in certain circumstances.
 motd: This site makes a lot of sound! You may want to adjust the volume before
     continuing.
+
+# Whether to hide the chat when the client disconnects from the server.
+# This was an option that was changed in 2020 when TLS was implemented on Brandon's original server.
+hideChatOnDisconnect: false

@@ -181,14 +181,16 @@ export class Channel extends EventEmitter {
                 }
             }
 
-            // We are not a lobby, so we probably have a crown
-            // this.getFlag("no_crown");
-            this.crown = new Crown();
+            if (!config.disableCrown) {
+                // We are not a lobby, so we probably have a crown
+                // this.getFlag("no_crown");
+                this.crown = new Crown();
 
-            // ...and, possibly, an owner, too
-            if (creator) {
-                const part = creator.getParticipant();
-                if (part) this.giveCrown(part, true, false);
+                // ...and, possibly, an owner, too
+                if (creator) {
+                    const part = creator.getParticipant();
+                    if (part) this.giveCrown(part, true, false);
+                }
             }
         } else {
             this.settings = config.lobbySettings;
@@ -982,6 +984,17 @@ export class Channel extends EventEmitter {
                     if (part.id !== this.crown.participantId) return;
                 }
             }
+
+            if (this.flags.player_colors) {
+                if (this.getSetting("color") !== part.color) {
+                    this.changeSettings(
+                        {
+                            color: part.color
+                        },
+                        true
+                    );
+                }
+            }
         }
 
         const clientMsg: OutgoingSocketEvents["n"] = {
@@ -1128,7 +1141,7 @@ export class Channel extends EventEmitter {
         banner?: string
     ) {
         const now = Date.now();
-        if (t < 0 || t > 300 * 60 * 1000) return;
+        if (t < 0 || t > config.maxBanMinutes * 60 * 1000) return;
 
         let shouldUpdate = false;
 

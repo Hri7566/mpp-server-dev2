@@ -25,7 +25,7 @@ declare type UserFlags = Partial<{
 }>;
 
 type TChannelFlags = Partial<{
-    limit: number;
+    limit: number; // slightly different compared to mppnet
     owner_id: string; // brandonism
     no_crown: boolean;
     rainbow: boolean;
@@ -90,18 +90,18 @@ declare type Notification = Partial<{
 declare type CustomTarget = {
     global?: boolean;
 } & (
-    | {
-          mode: "subscribed";
-      }
-    | {
-          mode: "ids";
-          ids: string[];
-      }
-    | {
-          mode: "id";
-          id: string;
-      }
-);
+        | {
+            mode: "subscribed";
+        }
+        | {
+            mode: "ids";
+            ids: string[];
+        }
+        | {
+            mode: "id";
+            id: string;
+        }
+    );
 
 declare interface Crown {
     userId: string;

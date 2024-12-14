@@ -82,7 +82,7 @@ This has always been the future intention of this project.
 
 - [x] Token generation
   - [x] Frontend implementation
-  - [ ] Token generator
+  - [x] Token generator
   - [ ] Test if they even work correctly
 - [x] Permission groups and permissions
     - [x] Probable permission groups: owner, admin, mod, trialmod, default
@@ -130,6 +130,9 @@ This has always been the future intention of this project.
       - fork?
     - Probably use a simple in-memory cache
     - Likely store with leveldb or JSON
+- Socket events could all be handled in one emitter
+    - Maybe use one external emitter so the functions aren't copied on each conncetion
+        - Does JS/Bun use symbols for such a thing already?
 
 ## How to run
 

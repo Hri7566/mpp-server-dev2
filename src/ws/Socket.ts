@@ -39,12 +39,9 @@ import type { RateLimit } from "./ratelimit/RateLimit";
 import type { RateLimitChain } from "./ratelimit/RateLimitChain";
 import {
     getUserPermissions,
-    hasPermission,
     validatePermission
 } from "~/data/permissions";
-import { getRoles } from "~/data/role";
 import { removeTag, setTag } from "~/util/tags";
-import { bus } from "~/event/bus";
 import { notificationConfig } from "~/util/notificationConfig";
 
 const logger = new Logger("Sockets");
@@ -72,9 +69,9 @@ export class Socket extends EventEmitter {
         _id: string | undefined;
         set: Partial<IChannelSettings> | undefined;
     } = {
-        _id: undefined,
-        set: {}
-    };
+            _id: undefined,
+            set: {}
+        };
 
     public currentChannelID: string | undefined;
     private cursorPos: Vector2<CursorValue> = { x: 200, y: 100 };
@@ -91,9 +88,8 @@ export class Socket extends EventEmitter {
             this.ip = ws.data.ip;
         } else {
             // Fake user
-            this.ip = `::ffff:${Math.random() * 255}.${Math.random() * 255}.${
-                Math.random() * 255
-            }.${Math.random() * 255}`;
+            this.ip = `::ffff:${Math.random() * 255}.${Math.random() * 255}.${Math.random() * 255
+                }.${Math.random() * 255}`;
         }
 
         // User ID
@@ -395,7 +391,7 @@ export class Socket extends EventEmitter {
             try {
                 if (typeof this.user.tag === "string")
                     tag = JSON.parse(this.user.tag) as Tag;
-            } catch (err) {}
+            } catch (err) { }
 
             return {
                 _id: facadeID,
