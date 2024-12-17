@@ -3,6 +3,7 @@ import { Logger } from "~/util/Logger";
 import { getMOTD } from "~/util/motd";
 import { createToken, getToken, validateToken } from "~/util/token";
 import type { ServerEventListener } from "~/util/types";
+import { BanManager } from "~/ws/BanManager";
 import { config } from "~/ws/usersConfig";
 
 const logger = new Logger("Hi handler");
@@ -15,6 +16,28 @@ export const hi: ServerEventListener<"hi"> = {
             if (!socket.rateLimits.normal.hi.attempt()) return;
 
         if (socket.gateway.hasProcessedHi) return;
+
+        // Socket ban (IP ban) check
+        const ip = socket.getIP();
+        const isBanned = await BanManager.isSocketBanned(ip);
+
+        logger.debug("isBanned:", isBanned);
+
+        if (isBanned) {
+            const duration = await BanManager.getSocketBanTimeRemaining(ip);
+            const reasons = await BanManager.getSocketBanReasons(ip);
+
+            socket.sendBanNotification(
+                duration || "forever(?)",
+                reasons
+                    ? typeof reasons === "string"
+                        ? reasons
+                        : reasons.join(", ")
+                    : undefined
+            );
+
+            return socket.destroy();
+        }
 
         // Browser challenge
         if (config.browserChallenge === "basic") {
@@ -44,8 +67,14 @@ export const hi: ServerEventListener<"hi"> = {
         if (
             config.browserChallenge !== "none" &&
             !socket.gateway.hasCompletedBrowserChallenge
-        )
-            return socket.ban(60000, "Browser challenge not completed");
+        ) {
+            // return socket.ban(60000, "Incomplete browser challenge");
+
+            // FIXME implement ban
+            return socket.destroy();
+        }
+
+        // Token auth
 
         let token: string | undefined;
         let generatedToken = false;

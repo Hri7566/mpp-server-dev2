@@ -13,6 +13,7 @@ import { builtinTags, getTag, removeTag, setBuiltinTag, setTag } from "../tags";
 import logger from "./logger";
 import { socketsByUUID } from "~/ws/Socket";
 import { createColor } from "../id";
+import { BanManager } from "~/ws/BanManager";
 
 Command.addCommand(
     new Command(["help", "h", "commands", "cmds"], "help", msg => {
@@ -350,5 +351,87 @@ Command.addCommand(
         const color = createColor(userId);
 
         return `User color: ${color}`;
+    })
+);
+
+Command.addCommand(
+    new Command(
+        ["ban"],
+        "ban <socket, user> <[ip], [userId]> <duration> <reason>",
+        async msg => {
+            const banType = msg.args[1];
+
+            if (banType === "socket") {
+                const ip = msg.args[2];
+                const duration = parseInt(msg.args[3]);
+                const reason = msg.args.slice(4).join(" ");
+
+                if (!ip || !duration || !reason)
+                    return `Usage: ban socket <ip> <duration> <reason>`;
+
+                await BanManager.banSocket(ip, duration, reason);
+            } else if (banType === "user") {
+                const _id = msg.args[2];
+                const duration = parseInt(msg.args[3]);
+                const reason = msg.args.slice(4).join(" ");
+
+                if (!_id) return `Usage: ban user <userId> <duration> <reason>`;
+
+                await BanManager.banUser(_id, duration, reason);
+            } else {
+                return `Usage: ban <socket, user> <[ip], [userId]> <duration> <reason>`;
+            }
+        }
+    )
+);
+
+Command.addCommand(
+    new Command(
+        ["listban", "listbans", "banlist", "banslist", "bans"],
+        "listban <socket, user> <[ip], [userId]>",
+        async msg => {
+            const banType = msg.args[1];
+
+            if (banType === "socket") {
+                const ip = msg.args[2];
+
+                const bans = await BanManager.getSocketBans(ip);
+                if (!bans || bans.length === 0)
+                    return `No bans for socket ${ip}`;
+
+                return (
+                    `Bans for socket ${ip}:\n` +
+                    bans.map(ban => BanManager.formatBanText(ban)).join("\n")
+                );
+            } else if (banType === "user") {
+                const _id = msg.args[2];
+
+                const bans = await BanManager.getSocketBans(_id);
+                if (!bans || bans.length === 0)
+                    return `No bans for user ${_id}`;
+
+                logger.debug(bans);
+
+                return (
+                    `Bans for user ${_id}:\n` +
+                    bans.map(ban => BanManager.formatBanText(ban)).join("\n")
+                );
+            }
+        }
+    )
+);
+
+Command.addCommand(
+    new Command(["ip"], "ip <userId>", async msg => {
+        const _id = msg.args[1];
+
+        if (!_id) return `Usage: ip <userId>`;
+
+        for (const socket of socketsByUUID.values()) {
+            if (socket.getUserID() === _id)
+                return "Found IP for online user: " + socket.getIP();
+        }
+
+        return "No user found (IPs are not saved, they have to be online)";
     })
 );

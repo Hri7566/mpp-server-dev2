@@ -116,3 +116,28 @@ export function hsl2hex(h: number, s: number, l: number) {
 export function limit(num: number, min: number, max: number) {
     return Math.min(Math.max(num, min), max);
 }
+
+/**
+ * Format a future time in milliseconds to a string displaying the time remaining
+ * @param ms Time in nilliseconds to format
+ */
+export function formatMillisecondsRemaining(ms: number) {
+    const seconds = ms / 1000;
+    const minutes = seconds / 60;
+    const hours = minutes / 60;
+    const days = hours / 24;
+
+    const cdays = Math.floor(days);
+    const chours = Math.floor(hours) % 24;
+    const cminutes = Math.floor(minutes) % 60;
+    const cseconds = Math.floor(seconds) % 60;
+
+    return [
+        cdays > 0 ? cdays + " days" : undefined,
+        chours > 0 ? chours + " hours" : undefined,
+        cminutes > 0 ? cminutes + " minutes" : undefined,
+        cseconds > 0 ? cseconds + " seconds" : undefined
+    ]
+        .filter(v => v !== undefined)
+        .join(", ");
+}

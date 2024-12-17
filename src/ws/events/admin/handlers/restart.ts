@@ -1,7 +1,7 @@
 import { ServerEventListener } from "~/util/types";
 import { socketsByUUID } from "~/ws/Socket";
 
-let timeout: Timer;
+let timeout: Timer | undefined;
 
 export const restart: ServerEventListener<"restart"> = {
     id: "restart",
@@ -23,7 +23,7 @@ export const restart: ServerEventListener<"restart"> = {
             });
         }
 
-        setTimeout(() => {
+        timeout = setTimeout(() => {
             // Stop the program
             process.exit();
         }, 20000);

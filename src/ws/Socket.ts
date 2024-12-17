@@ -37,12 +37,10 @@ import { config as channelConfig } from "../channel/config";
 import { crownLimits } from "./ratelimit/limits/crown";
 import type { RateLimit } from "./ratelimit/RateLimit";
 import type { RateLimitChain } from "./ratelimit/RateLimitChain";
-import {
-    getUserPermissions,
-    validatePermission
-} from "~/data/permissions";
+import { getUserPermissions, validatePermission } from "~/data/permissions";
 import { removeTag, setTag } from "~/util/tags";
 import { notificationConfig } from "~/util/notificationConfig";
+import { formatMillisecondsRemaining } from "~/util/helpers";
 
 const logger = new Logger("Sockets");
 
@@ -69,9 +67,9 @@ export class Socket extends EventEmitter {
         _id: string | undefined;
         set: Partial<IChannelSettings> | undefined;
     } = {
-            _id: undefined,
-            set: {}
-        };
+        _id: undefined,
+        set: {}
+    };
 
     public currentChannelID: string | undefined;
     private cursorPos: Vector2<CursorValue> = { x: 200, y: 100 };
@@ -88,8 +86,9 @@ export class Socket extends EventEmitter {
             this.ip = ws.data.ip;
         } else {
             // Fake user
-            this.ip = `::ffff:${Math.random() * 255}.${Math.random() * 255}.${Math.random() * 255
-                }.${Math.random() * 255}`;
+            this.ip = `::ffff:${Math.random() * 255}.${Math.random() * 255}.${
+                Math.random() * 255
+            }.${Math.random() * 255}`;
         }
 
         // User ID
@@ -391,7 +390,7 @@ export class Socket extends EventEmitter {
             try {
                 if (typeof this.user.tag === "string")
                     tag = JSON.parse(this.user.tag) as Tag;
-            } catch (err) { }
+            } catch (err) {}
 
             return {
                 _id: facadeID,
@@ -842,18 +841,33 @@ export class Socket extends EventEmitter {
      * @param duration Duration of the ban in milliseconds
      * @param reason Reason for the ban
      **/
-    public ban(duration: number, reason: string) {
-        // TODO cleaner ban system
-        // TODO save bans to database
+    // public ban(duration: number, reason: string) {
+    //     // TODO cleaner ban system
+    //     // TODO save bans to database
 
-        const user = this.getUser();
-        if (!user) return;
+    //     const user = this.getUser();
+    //     if (!user) return;
+
+    //     this.sendNotification({
+    //         title: "Notice",
+    //         text: `You have been banned from the server for ${Math.floor(
+    //             duration / 1000 / 60
+    //         )} minutes. Reason: ${reason}`,
+    //         duration: 20000,
+    //         target: "#room",
+    //         class: "classic"
+    //     });
+    // }
+
+    public sendBanNotification(duration: number | string, reason?: string) {
+        if (typeof duration === "number")
+            duration = formatMillisecondsRemaining(duration);
 
         this.sendNotification({
             title: "Notice",
-            text: `You have been banned from the server for ${Math.floor(
-                duration / 1000 / 60
-            )} minutes. Reason: ${reason}`,
+            text: `You have been banned from the server for ${duration}.${
+                reason ? ` Reason: ${reason}` : ""
+            }`,
             duration: 20000,
             target: "#room",
             class: "classic"
