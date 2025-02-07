@@ -21,7 +21,7 @@ export const hi: ServerEventListener<"hi"> = {
         const ip = socket.getIP();
         const isBanned = await BanManager.isSocketBanned(ip);
 
-        logger.debug("isBanned:", isBanned);
+        // logger.debug("isBanned:", isBanned);
 
         if (isBanned) {
             const duration = await BanManager.getSocketBanTimeRemaining(ip);

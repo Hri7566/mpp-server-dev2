@@ -32,6 +32,8 @@ import {
     saveChannel
 } from "../data/channel";
 import { forceloadChannel } from "./forceload";
+import { getRolePermissions } from "~/data/permissions";
+import { getRoles } from "~/data/role";
 
 interface CachedKickban {
     userId: string;
@@ -367,7 +369,9 @@ export class Channel extends EventEmitter {
             }
         });
 
-        this.on("command", (msg, socket: Socket) => {
+        this.on("command", async (msg, socket: Socket) => {
+            if (!config.enableChatCommands) return;
+
             const args = msg.message.split(" ");
             const cmd = args[0].substring(1);
             const userID = socket.getUserID();
@@ -375,10 +379,15 @@ export class Channel extends EventEmitter {
                 this.hasUser(userID) &&
                 this.crown &&
                 this.crown.userId == userID;
+            const roles = await getRoles(userID);
 
-            if (cmd === "help") {
-            } else if (cmd === "mem") {
+            if (cmd === "mem") {
                 this.printMemoryInChat();
+            } else if (cmd === "roles") {
+                this.logger.debug(roles);
+                this.sendChatAdmin(
+                    `Roles: ${roles.map(r => r.roleId).join(", ")}`
+                );
             }
         });
 
@@ -849,12 +858,11 @@ export class Channel extends EventEmitter {
      * @returns Boolean
      */
     public isFull() {
-        // TODO Use limit setting
-
         if (this.isTrueLobby() && this.ppl.length >= 20) {
             return true;
         }
 
+        // Check user-defined participant limit
         if (
             typeof this.settings.limit === "number" &&
             this.ppl.length >= this.settings.limit

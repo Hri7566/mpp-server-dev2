@@ -21,8 +21,8 @@ export class BanManager {
     private static async checkBanList(bans: Ban[]) {
         for (const ban of bans) {
             const isExpired = await this.isExpired(ban);
-            logger.debug("ban:", ban);
-            logger.debug("isExpired:", isExpired);
+            // logger.debug("ban:", ban);
+            // logger.debug("isExpired:", isExpired);
             if (!isExpired) return true;
         }
 
@@ -69,7 +69,7 @@ export class BanManager {
 
     public static async isExpired(ban: Ban) {
         const expired = new Date() > ban.expires;
-        logger.debug("expired:", expired);
+        // logger.debug("expired:", expired);
         return expired;
     }
 

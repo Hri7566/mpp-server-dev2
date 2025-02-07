@@ -13,6 +13,8 @@ interface ChannelConfig {
     channelDestroyTimeout: number;
     maxBanMinutes: number;
     disableCrown: boolean;
+    enableChatCommands: boolean;
+    chatFade: boolean;
 }
 
 export const config = ConfigManager.loadConfig<ChannelConfig>(
@@ -48,6 +50,8 @@ export const config = ConfigManager.loadConfig<ChannelConfig>(
         chownOnRejoin: true,
         channelDestroyTimeout: 1000,
         maxBanMinutes: 60,
-        disableCrown: false
+        disableCrown: false,
+        enableChatCommands: false,
+        chatFade: false
     }
 );
