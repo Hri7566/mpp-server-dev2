@@ -19,6 +19,7 @@ model User {
   tag    String? // JSON tag
   tokens String  @default("[]") // JSON tokens
   group  String  @default("default") // Permission group
+  Ban    Ban[]
 }
 
 model ChatHistory {
@@ -43,4 +44,14 @@ model RolePermission {
   id         Int    @id @unique @default(autoincrement())
   roleId     String
   permission String
+}
+
+model Ban {
+  id      Int      @id @unique @default(autoincrement())
+  banType String
+  expires DateTime
+  user    User?    @relation(fields: [userId], references: [id])
+  userId  String?
+  ip      String?
+  reason  String?
 }

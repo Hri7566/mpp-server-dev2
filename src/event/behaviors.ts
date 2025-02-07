@@ -2,6 +2,9 @@ import { ChannelList } from "~/channel/ChannelList";
 import { bus } from "./bus";
 import type { OutgoingSocketEvents, IncomingSocketEvents } from "~/util/types";
 import { socketsByUUID, type Socket } from "~/ws/Socket";
+import { Logger } from "~/util/Logger";
+
+const logger = new Logger("Event Bus");
 
 export function loadBehaviors() {
     bus.on("hamburger", () => {
@@ -86,6 +89,26 @@ export function loadBehaviors() {
     bus.on("user data update", user => {
         for (const ch of ChannelList.getList()) {
             ch.emit("user data update", user);
+        }
+    });
+
+    bus.on("ban", ban => {
+        try {
+            if (ban.banType === "user") {
+                for (const socket of socketsByUUID.values()) {
+                    if (socket.getUserID() !== ban._id) continue;
+                    socket.sendBanNotification(ban.duration, ban.reason);
+                    socket.destroy();
+                }
+            } else if (ban.banType === "socket") {
+                for (const socket of socketsByUUID.values()) {
+                    if (socket.getIP() !== ban.ip) continue;
+                    socket.sendBanNotification(ban.duration, ban.reason);
+                    socket.destroy();
+                }
+            }
+        } catch (err) {
+            logger.warn("Unhandled error in ban event:", err);
         }
     });
 
