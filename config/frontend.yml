@@ -10,7 +10,7 @@ topButtons: git-links
 disableChat: false
 
 # Whether to enable snowflakes.
-winter: true
+winter: false
 
 # Whether to enable the previously-broken piano sliding transition.
 enableSlide: false
