@@ -10,7 +10,7 @@ topButtons: git-links
 disableChat: false
 
 # Whether to enable snowflakes.
-winter: true
+winter: false
 
 # Whether to enable the previously-broken piano sliding transition.
 enableSlide: false
@@ -24,7 +24,7 @@ playingAloneSocialLinks: false
 # The text that appears in the startup modal.
 # The startup modal dialog is somewhat required to enable sound on the page in modern browsers.
 # This is because of the change that disallows ads to autoplay audio, which will make the piano silent in certain circumstances.
-motd: This site makes a lot of sound! You may want to adjust the volume before
+motd: This site makes a little bit of sound! You may want to raise the volume before
     continuing.
 
 # Whether to hide the chat when the client disconnects from the server.

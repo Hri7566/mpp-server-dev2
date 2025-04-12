@@ -12,6 +12,9 @@ import { Logger } from "./Logger";
  * program.
  */
 
+/**
+ * Configuration loader/reloader
+ */
 export class ConfigManager {
     public static configCache = new Map<string, unknown>();
     public static logger: Logger;
@@ -19,7 +22,7 @@ export class ConfigManager {
     static {
         setTimeout(() => {
             this.logger = new Logger("Config Loader");
-        });
+        }, 1);
     }
 
     /**

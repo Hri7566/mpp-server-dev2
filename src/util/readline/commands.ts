@@ -115,10 +115,10 @@ Command.addCommand(
 
                     return `List of connected sockets:\n${list.join("\n")}`;
                 } else {
-                    return "list <channels, users>";
+                    return "list <channels, users, sockets>";
                 }
             } else {
-                return "list <channels, users>";
+                return "list <channels, users, sockets>";
             }
         }
     )
