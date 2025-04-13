@@ -3,6 +3,7 @@ import env from "./env";
 import { spoop_text } from "./helpers";
 import { config } from "~/ws/usersConfig";
 import { Logger } from "./Logger";
+import crypto from "crypto";
 
 const logger = new Logger("IDGen");
 
@@ -34,7 +35,7 @@ export function createID() {
  * @param ip IP address of user
  * @returns User ID
  */
-export function createUserID(ip: string) {
+export function createUserIDFromIP(ip: string) {
     if (config.idGeneration == "random") {
         return createID();
     } else if (config.idGeneration == "sha256") {

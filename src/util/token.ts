@@ -1,72 +1,64 @@
 import { readFileSync } from "fs";
-import { readUser, updateUser } from "~/data/user";
 import { Gateway } from "~/ws/Gateway";
 import { config } from "~/ws/usersConfig";
 import { Logger } from "./Logger";
 import jwt from "jsonwebtoken";
+import crypto from "node:crypto";
+import { prisma } from "~/data/prisma";
 
 const logger = new Logger("Tokens");
 
 let key: string;
 
 if (config.tokenAuth == "jwt") {
+    // TODO: find a better path for this file
     key = readFileSync("./mppkey").toString();
 }
 
 /**
- * Get an existing token for a user
- * @param userID ID of user
+ * Generate and save a new token for a user
+ * @param userId ID of user
+ * @param gateway Socket gateway context
  * @returns Token
  **/
-export async function getToken(userID: string) {
+export async function createToken(
+    userId: string,
+    gateway: Gateway,
+    method = config.tokenAuth
+) {
     try {
-        const user = await readUser(userID);
+        let token = "";
 
-        if (!user) return;
-        if (typeof user.tokens !== "string") return;
+        // Generate token based on method
+        if (method === "uuid") {
+            token = userId + "." + crypto.randomUUID();
+        } else if (method === "jwt") {
+            token = generateJWT(userId, gateway);
+        }
 
-        const data = JSON.parse(user.tokens) as string[];
-        return data[0];
+        // Save token
+        prisma.token.create({
+            data: {
+                userId,
+                token
+            }
+        });
+
+        return token;
     } catch (err) {
-        logger.warn(`Unable to get token for user ${userID}:`, err);
+        logger.warn(`Unable to create token for user ${userId}:`, err);
     }
 }
 
 /**
- * Create a new token for a user
- * @param userID ID of user
- * @param gateway Socket gateway context
- * @returns Token
- **/
-export async function createToken(userID: string, gateway: Gateway) {
-    try {
-        const user = await readUser(userID);
-
-        if (!user) return;
-        if (typeof user.tokens !== "string") user.tokens = "[]";
-
-        const data = JSON.parse(user.tokens) as string[];
-        let token = "";
-
-        if (config.tokenAuth == "uuid") {
-            token = userID + "." + crypto.randomUUID();
-        } else if (config.tokenAuth == "jwt") {
-            token = generateJWT(userID, gateway);
-        }
-
-        data.push(token);
-        user.tokens = JSON.stringify(data);
-
-        await updateUser(userID, user);
-        return token;
-    } catch (err) {
-        logger.warn(`Unable to create token for user ${userID}:`, err);
-    }
-}
-
-export function generateJWT(userID: string, gateway: Gateway) {
+ * Generate a JWT token for a user
+ * @param userId User ID
+ * @param gateway User gateway instance
+ * @returns Signed JWT
+ */
+export function generateJWT(userId: string, gateway: Gateway) {
     const payload = {
-        userID,
+        userId: userId,
         gateway
     };
 
@@ -76,34 +68,52 @@ export function generateJWT(userID: string, gateway: Gateway) {
 }
 
 /**
- * Validate a token
- * @param userID ID of user
- * @param token Token
- * @returns True if token is valid, false otherwise
+ * Get a user's tokens
+ * @param userId ID of user
+ * @returns Token
  **/
-export async function validateToken(userID: string, token: string) {
+export async function getTokens(userId: string) {
     try {
-        const user = await readUser(userID);
+        const tokens = await prisma.token.findMany({
+            where: { userId }
+        });
 
-        if (!user) {
-            logger.warn(
-                `Unable to validate token for user ${userID}: User not found, which is really weird`
-            );
-            return false;
-        }
-
-        if (typeof user.tokens !== "string") {
-            user.tokens = "[]"; // shut up go away
-        }
-
-        const data = JSON.parse(user.tokens) as string[];
-
-        if (data.indexOf(token) !== -1) {
-            return true;
-        }
-
-        return false;
+        return tokens;
     } catch (err) {
-        logger.warn(`Unable to validate token for user ${userID}:`, err);
+        logger.warn(`Unable to get token for user ${userId}:`, err);
+    }
+}
+
+/**
+ * Delete a user's specific token
+ * @param userId User ID
+ * @param token Token to remove
+ */
+export async function deleteToken(userId: string, token: string) {
+    try {
+        prisma.token.delete({
+            where: {
+                userId,
+                token
+            }
+        });
+    } catch (err) {
+        logger.warn(`Unable to delete token for user ${userId}:`, err);
+    }
+}
+
+/**
+ * Delete all of a user's tokens
+ * @param userId User ID
+ */
+export async function deleteAllTokens(userId: string) {
+    try {
+        prisma.token.deleteMany({
+            where: {
+                userId
+            }
+        });
+    } catch (err) {
+        logger.warn(`Unable to delete all tokens for user ${userId}:`, err);
     }
 }

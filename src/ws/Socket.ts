@@ -4,7 +4,7 @@
  * Represents user connections
  */
 
-import { createColor, createID, createUserID } from "~/util/id";
+import { createColor, createID, createUserIDFromIP } from "~/util/id";
 import EventEmitter from "events";
 import type {
     IChannelInfo,
@@ -41,6 +41,7 @@ import { getUserPermissions, validatePermission } from "~/data/permissions";
 import { removeTag, setTag } from "~/util/tags";
 import { notificationConfig } from "~/util/notificationConfig";
 import { formatMillisecondsRemaining } from "~/util/helpers";
+import crypto from "crypto";
 
 const logger = new Logger("Sockets");
 
@@ -92,7 +93,8 @@ export class Socket extends EventEmitter {
         }
 
         // User ID
-        this._id = createUserID(this.getIP());
+        // also set in hi message from token check
+        this._id = createUserIDFromIP(this.getIP());
         this.uuid = crypto.randomUUID();
 
         // Check if we're already connected
