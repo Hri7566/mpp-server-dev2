@@ -21,21 +21,6 @@ import { plus_custom } from "./handlers/+custom";
 import { minus_custom } from "./handlers/-custom";
 import { custom } from "./handlers/custom";
 
-// Imagine not having an "addMany" function...
-
-// EVENTGROUP_USER.add(hi);
-// EVENTGROUP_USER.add(devices);
-// EVENTGROUP_USER.add(ch);
-// EVENTGROUP_USER.add(m);
-// EVENTGROUP_USER.add(a);
-// EVENTGROUP_USER.add(userset);
-// EVENTGROUP_USER.add(n);
-// EVENTGROUP_USER.add(plus_ls);
-// EVENTGROUP_USER.add(minus_ls);
-// EVENTGROUP_USER.add(admin_message);
-// EVENTGROUP_USER.add(chset);
-
-// Imagine it looks exactly the same and calls the same function underneath
 EVENTGROUP_USER.addMany(
     hi,
     devices,

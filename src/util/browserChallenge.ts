@@ -5,7 +5,8 @@ import { Logger } from "./Logger";
 const logger = new Logger("Browser Challenge Handler");
 
 export function checkChallenge(socket: Socket, code?: string) {
-    if (config.browserChallenge === "none") socket.gateway.hasCompletedBrowserChallenge = true;
+    if (config.browserChallenge === "none")
+        socket.gateway.hasCompletedBrowserChallenge = true;
     if (config.browserChallenge === "basic") checkBasicChallenge(socket, code);
     if (config.browserChallenge === "obf") checkObfChallenge(socket, code);
 }
@@ -29,10 +30,7 @@ export function checkBasicChallenge(socket: Socket, code?: string) {
             }
         }
     } catch (err) {
-        logger.warn(
-            "Unable to parse basic browser challenge code:",
-            err
-        );
+        logger.warn("Unable to parse basic browser challenge code:", err);
     }
 }
 

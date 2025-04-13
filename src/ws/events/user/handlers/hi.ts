@@ -22,6 +22,7 @@ export const hi: ServerEventListener<"hi"> = {
         if (config.tokenAuth !== "none") {
             // Token validator
             if (typeof msg.token === "string") {
+                // They sent us a token, get the user from that token
                 const userID = await getUserIDFromToken(msg.token);
 
                 if (!userID) {
@@ -32,12 +33,9 @@ export const hi: ServerEventListener<"hi"> = {
                     socket.setUserID(userID);
                 }
             } else if (typeof msg.token === "undefined") {
-                const tokens = await getTokens(socket.getUserID());
+                let tokens = await getTokens(socket.getUserID());
 
-                if (!Array.isArray(tokens)) {
-                    // FIXME
-                    return;
-                }
+                if (!Array.isArray(tokens)) tokens = [];
 
                 if (!tokens[0]) {
                     try {
@@ -65,6 +63,8 @@ export const hi: ServerEventListener<"hi"> = {
                 return void socket.destroy();
             }
         }
+
+        await socket.loadUser();
 
         let part = socket.getParticipant() as User;
         if (!part) {

@@ -36,103 +36,103 @@ This has always been the future intention of this project.
 
 ## List of features
 
-- Chat
-    - Original chat filter by chacha and Brandon Lockaby
-    - Commands for debugging or administrative purposes
-- Piano Notes
-    - Uses the same `NoteQuota` implementation from the client
-- Usernames/colors
-    - Allowing color changing can be toggled in the config, similar to MPP.com
-    - Default user parameters can be set
-    - Configurable ID and color generation methods
-- Channels
-    - Channel list
-    - Channel settings
-    - Options to keep channels forceloaded
-        - Configurable
-        - Ability to forceload at runtime
-- Rate limits
-    - Borrowed from Brandon's GitHub Gist account
-- Brandon-style admin messages
-    - Remote name changing
-    - Color changing
-    - User flag settings
-        - Ability to change the volume of users' notes (affects note velocity)
-        - Chat muting
-        - Rate limit bypasses
-    - Channel/User-targeted notifications
-    - Server-wide/channel-specific/user-specific notifications
-- New admin messages
-    - Restart message
-        - Triggers notification on every connected socket, then shuts down after 20 seconds
-        - Server must be setup as a pm2/docker/systemd process for automatic restarting
-    - Ability to change tags
-        - Similar to the MPP.net server, but uses a Brandon-style admin message
-    - Ability to rename channels
-    - Chat clearing similar to MPP.net
-    - Channel forceloading message
-- YAML configs
-  - Automatic reloading of configs during runtime via file watching
-  - Interfacing handled by JS Proxy objects
-- Templating on frontend
-  - Handles changing things on page based on config
-  - Requires the use of `mpp-frontend-dev` to function properly
+-   Chat
+    -   Original chat filter by chacha and Brandon Lockaby
+    -   Commands for debugging or administrative purposes
+-   Piano Notes
+    -   Uses the same `NoteQuota` implementation from the client
+-   Usernames/colors
+    -   Allowing color changing can be toggled in the config, similar to MPP.com
+    -   Default user parameters can be set
+    -   Configurable ID and color generation methods
+-   Channels
+    -   Channel list
+    -   Channel settings
+    -   Options to keep channels forceloaded
+        -   Configurable
+        -   Ability to forceload at runtime
+-   Rate limits
+    -   Borrowed from Brandon's GitHub Gist account
+-   Brandon-style admin messages
+    -   Remote name changing
+    -   Color changing
+    -   User flag settings
+        -   Ability to change the volume of users' notes (affects note velocity)
+        -   Chat muting
+        -   Rate limit bypasses
+    -   Channel/User-targeted notifications
+    -   Server-wide/channel-specific/user-specific notifications
+-   New admin messages
+    -   Restart message
+        -   Triggers notification on every connected socket, then shuts down after 20 seconds
+        -   Server must be setup as a pm2/docker/systemd process for automatic restarting
+    -   Ability to change tags
+        -   Similar to the MPP.net server, but uses a Brandon-style admin message
+    -   Ability to rename channels
+    -   Chat clearing similar to MPP.net
+    -   Channel forceloading message
+-   YAML configs
+    -   Automatic reloading of configs during runtime via file watching
+    -   Interfacing handled by JS Proxy objects
+-   Templating on frontend
+    -   Handles changing things on page based on config
+    -   Requires the use of `mpp-frontend-dev` to function properly
 
 ## TODO
 
-- [x] Token generation
-  - [x] Frontend implementation
-  - [x] Token generator
-  - [ ] Test if they even work correctly
-- [x] Permission groups and permissions
-    - [x] Probable permission groups: owner, admin, mod, trialmod, default
-    - [x] Setup tags for each permission group
-    - [ ] Implement permissions into rest of server
-    - [ ] Probably already needs to be reworked, given the weird state of how tags work
-- [x] MPP.com data message
-    - Implement based on `spooky.js` given there is no official documentation
-    - This could be useful for only a few things, but still good for debugging
-- [ ] No cussing setting
-  - [ ] Decide on "lyrical notes"
-- [x] Full server-wide event bus
-    - [ ] Channel events
-    - [ ] Socket events
-    - [ ] User data events
-    - [ ] Permission-related events
-- [ ] Redo ratelimits
-- [ ] Test fishing bot
-- [ ] Remote console
-- [x] Modify frontend to use templating
-  - [x] index.html
-  - [x] Load configs on client
-  - [x] Tags
-    - [ ] Update tags live when changing from server console
+-   [x] Token generation
+    -   [x] Frontend implementation
+    -   [x] Token generator
+    -   [x] Test if they even work correctly
+-   [x] Permission groups and permissions
+    -   [x] Probable permission groups: owner, admin, mod, trialmod, default
+    -   [x] Setup tags for each permission group
+    -   [ ] Implement permissions into rest of server
+    -   [ ] Probably already needs to be reworked, given the weird state of how tags work
+-   [x] MPP.com data message
+    -   Implement based on `spooky.js` given there is no official documentation
+    -   This could be useful for only a few things, but still good for debugging
+-   [ ] No cussing setting
+    -   [ ] Decide on "lyrical notes"
+-   [x] Full server-wide event bus
+    -   [ ] Channel events
+    -   [ ] Socket events
+    -   [ ] User data events
+    -   [ ] Permission-related events
+-   [ ] Redo ratelimits
+-   [ ] Test fishing bot
+-   [ ] Remote console
+-   [x] Modify frontend to use templating
+    -   [x] index.html
+    -   [x] Load configs on client
+    -   [x] Tags
+        -   [ ] Update tags live when changing from server console
 
 ## Backlog/Notes
 
-- Use template engine instead of raw HTML?
-    - Change frontend files at runtime?
-    - Split script.js into multiple files
-    - Implement tags as a server option, toggles code on frontend
-        - Same with color changing
-- Reload config files on save
-- Expose API?
-- Client type identification?
-    - Check for certain css?
-    - Check for different messages?
-    - Check for URL?
-    - Notifications for server-generated XSS?
-    - Somehow check for templating, maybe with the existing httpIPCache?
-- Migrate to PostgreSQL instead of SQLite
-     - Likely a low priority, we use prisma anyway, but it would be nice to have a non-blocking database
-- Implement user caching
-    - Skip redis due to the infamous licensing issues
-      - fork?
-    - Probably use a simple in-memory cache
-    - Likely store with leveldb or JSON
-- Socket events could all be handled in one emitter
-    - Maybe use one external emitter so the functions aren't copied on each conncetion
-        - Does JS/Bun use symbols for such a thing already?
+-   Use template engine instead of raw HTML?
+    -   Change frontend files at runtime?
+    -   Split script.js into multiple files
+    -   Implement tags as a server option, toggles code on frontend
+        -   Same with color changing
+-   Reload config files on save
+-   Expose API?
+-   Client type identification?
+    -   Check for certain css?
+    -   Check for different messages?
+    -   Check for URL?
+    -   Notifications for server-generated XSS?
+    -   Somehow check for templating, maybe with the existing httpIPCache?
+-   Migrate to PostgreSQL instead of SQLite
+    -   Likely a low priority, we use prisma anyway, but it would be nice to have a non-blocking database
+-   Implement user caching
+    -   Skip redis due to the infamous licensing issues
+        -   fork?
+    -   Probably use a simple in-memory cache
+    -   Likely store with leveldb or JSON
+-   Socket events could all be handled in one emitter
+    -   Maybe use one external emitter so the functions aren't copied on each conncetion
+        -   Does JS/Bun use symbols for such a thing already?
 
 ## How to run
 
@@ -141,13 +141,13 @@ Also, don't expect these instructions to stay the same forever. Because this ser
 
 0. Setup
 
-- Install bun
+-   Install bun
 
     ```
     $ curl -fsSL https://bun.sh/install | bash
     ```
 
-- Clone the repository and setup Git submodules
+-   Clone the repository and setup Git submodules
 
 If you are forking this repository, you can just setup a new submodule for the frontend (instructions not included), **however, templating will likely not function properly with this approach unless you implement it yourself.**
 
@@ -168,6 +168,7 @@ $ git clone --recursive https://git.hri7566.info/Hri7566/mpp-server-dev2
     ```
 
     Edit `.env` to your needs. Some variables are required for certain features to work. Most of this is self-explanatory if you have set up other large projects.
+
     - `DATABASE_URL`: Database URI for prisma to connect to (as of right now, this is required to be a sqlite path)
     - `PORT`: TCP port the HTTP/WS server will run on
     - `ADMIN_PASS`: Admin password for the server
@@ -219,7 +220,7 @@ $ git clone --recursive https://git.hri7566.info/Hri7566/mpp-server-dev2
     ```
 
 5. Run
-   
+
     The main entrypoint is in `src/start.ts`.
 
     ```
@@ -242,7 +243,7 @@ To avoid various controversies or mass confusion, I will attempt to explain why 
 
 Multiplayer Piano (MPP) was originally developed by Brandon Lockaby from 2012-2020, and this server was the original MPP server and was written in JavaScript for the Node.js runtime.
 Brandon didn't share details about it often, and it had many unknown features and basically has no documentation, so most of the admin features based on this server are guesswork or based on tiny snippets of code acquired from various sources.
-The only other people known to be associated in the development were chacha and 
+The only other people known to be associated in the development were chacha and
 This server was hosted on Linode under the domain `www.multiplayerpiano.com:80` until some time in 2019-2020, when it was upgraded to https and moved to `www.multiplayerpiano.com:443`.
 
 After that point, in late 2020, the rights to the site were sold to some user who later revealed themselves as "jacored", but they have been unhelpful in all regards.
@@ -302,10 +303,11 @@ Also note that this currently isn't able to be used on MPP.com because either ve
 MPP.com's server code.
 
 These admin messages included the following:
-- "name"
-- "color"
-- "user_flag"
-- "notification"
+
+-   "name"
+-   "color"
+-   "user_flag"
+-   "notification"
 
 From the aforementioned scripts, user flags were also found and implemented in this server.
 

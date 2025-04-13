@@ -24,6 +24,10 @@ export const builtinTags = ConfigManager.loadConfig<Record<string, Tag>>(
             text: "MEDIA",
             color: "#ff55ff"
         },
+        dev: {
+            text: "DEV",
+            color: "#5500ff"
+        },
         bot: {
             text: "BOT",
             color: "#5555ff"

@@ -310,13 +310,13 @@ export class Socket extends EventEmitter {
     }
 
     /**
-     * Load this socket's user data
+     * Load this socket's user data (DANGEROUS!)
      **/
-    private async loadUser() {
+    public async loadUser() {
         let user = await readUser(this._id);
 
         if (!user || user == null) {
-            //logger.debug("my fancy new ID:", this._id);
+            // User doesn't exist yet, create a new one
             await createUser(
                 this._id,
                 config.defaultName,

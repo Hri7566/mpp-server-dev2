@@ -20,9 +20,9 @@ export class ConfigManager {
     public static logger: Logger;
 
     static {
-        setTimeout(() => {
+        setImmediate(() => {
             this.logger = new Logger("Config Loader");
-        }, 1);
+        });
     }
 
     /**
