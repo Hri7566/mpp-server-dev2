@@ -1,10 +1,12 @@
 import { getUserPermissions } from "~/data/permissions";
 import { checkChallenge } from "~/util/browserChallenge";
 import { Logger } from "~/util/Logger";
-import { getMOTD } from "~/util/motd";
-import { createToken, getToken, validateToken } from "~/util/token";
-import type { ServerEventListener } from "~/util/types";
-import { BanManager } from "~/ws/BanManager";
+import { createToken, getTokens, getUserIDFromToken } from "~/util/token";
+import type {
+    OutgoingSocketEvents,
+    ServerEventListener,
+    User
+} from "~/util/types";
 import { config } from "~/ws/usersConfig";
 
 const logger = new Logger("Hi handler");
@@ -12,39 +14,68 @@ const logger = new Logger("Hi handler");
 export const hi: ServerEventListener<"hi"> = {
     id: "hi",
     callback: async (msg, socket) => {
-        // Handshake message
+        let token: string | undefined;
 
-        // Check "hi" rate limit
-        if (!socket.rateLimits?.normal.hi.attempt()) return;
+        // Browser challenge check
+        checkChallenge(socket, msg.code);
 
-        // Is the browser challenge enabled and has the user completed it?
-        switch (config.browserChallenge) {
-            case "basic":
-                if (typeof msg.code !== "string") return;
-                break;
-            case "obf":
-                throw new Error("Obfuscated browser challenge not implemented");
-                break;
+        if (config.tokenAuth !== "none") {
+            // Token validator
+            if (typeof msg.token === "string") {
+                const userID = await getUserIDFromToken(msg.token);
+
+                if (!userID) {
+                    socket.sendDisconnectNotification("Invalid token");
+                    return void socket.destroy();
+                } else {
+                    token = msg.token;
+                    socket.setUserID(userID);
+                }
+            } else if (typeof msg.token === "undefined") {
+                const tokens = await getTokens(socket.getUserID());
+
+                if (!Array.isArray(tokens)) {
+                    // FIXME
+                    return;
+                }
+
+                if (!tokens[0]) {
+                    try {
+                        token = await createToken(
+                            socket.getUserID(),
+                            socket.gateway
+                        );
+                    } catch (err) {
+                        logger.error("Unable to generate token:", err);
+                        socket.sendDisconnectNotification(
+                            "Unable to generate token"
+                        );
+                        return void socket.destroy();
+                    }
+                } else {
+                    token = tokens[0].token;
+                }
+            } else {
+                socket.sendDisconnectNotification("Invalid token format");
+                return void socket.destroy();
+            }
+
+            if (!token) {
+                socket.sendDisconnectNotification("Unable to handle token");
+                return void socket.destroy();
+            }
         }
 
-        // Token auth
-
-        let part = socket.getParticipant();
-
+        let part = socket.getParticipant() as User;
         if (!part) {
             part = {
                 _id: socket.getUserID(),
-                name: "Anonymous",
-                color: "#777",
-                id: "",
-                tag: undefined
+                name: config.defaultName,
+                color: "#777"
             };
         }
 
-        const permissions: Record<string, boolean> = {};
-        (await getUserPermissions(socket.getUserID())).map(perm => {
-            permissions[perm] = true;
-        });
+        const permissions = getUserPermissions(socket.getUserID());
 
         socket.sendArray([
             {
@@ -54,15 +85,12 @@ export const hi: ServerEventListener<"hi"> = {
                 t: Date.now(),
                 u: {
                     _id: part._id,
-                    color: part.color,
                     name: part.name,
+                    color: part.color,
                     tag: config.enableTags ? part.tag : undefined
                 },
-                motd: getMOTD(),
                 token
-            }
+            } as OutgoingSocketEvents["hi"]
         ]);
-
-        socket.gateway.hasProcessedHi = true;
     }
 };

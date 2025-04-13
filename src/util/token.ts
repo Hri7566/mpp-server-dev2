@@ -37,7 +37,7 @@ export async function createToken(
         }
 
         // Save token
-        prisma.token.create({
+        await prisma.token.create({
             data: {
                 userId,
                 token
@@ -91,7 +91,7 @@ export async function getTokens(userId: string) {
  */
 export async function deleteToken(userId: string, token: string) {
     try {
-        prisma.token.delete({
+        await prisma.token.delete({
             where: {
                 userId,
                 token
@@ -108,7 +108,7 @@ export async function deleteToken(userId: string, token: string) {
  */
 export async function deleteAllTokens(userId: string) {
     try {
-        prisma.token.deleteMany({
+        await prisma.token.deleteMany({
             where: {
                 userId
             }
@@ -116,4 +116,17 @@ export async function deleteAllTokens(userId: string) {
     } catch (err) {
         logger.warn(`Unable to delete all tokens for user ${userId}:`, err);
     }
+}
+
+/**
+ * Get a user's ID from one of their tokens
+ * @param token User's token
+ * @returns User ID
+ */
+export async function getUserIDFromToken(token: string) {
+    const data = await prisma.token.findUnique({
+        where: { token }
+    });
+
+    if (data) return data.userId;
 }

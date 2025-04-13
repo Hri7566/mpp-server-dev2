@@ -190,6 +190,14 @@ export class Socket extends EventEmitter {
     }
 
     /**
+     * Change this socket's user ID (DANGEROUS!)
+     * @param _id New user ID
+     */
+    public setUserID(_id: string) {
+        this._id = _id;
+    }
+
+    /**
      * Get the participant ID (id) of this socket
      * @returns Participant ID
      **/
@@ -868,6 +876,18 @@ export class Socket extends EventEmitter {
         this.sendNotification({
             title: "Notice",
             text: `You have been banned from the server for ${duration}.${
+                reason ? ` Reason: ${reason}` : ""
+            }`,
+            duration: 20000,
+            target: "#room",
+            class: "classic"
+        });
+    }
+
+    public sendDisconnectNotification(reason?: string) {
+        this.sendNotification({
+            title: "Notice",
+            text: `You have been disconnected from the server.${
                 reason ? ` Reason: ${reason}` : ""
             }`,
             duration: 20000,
