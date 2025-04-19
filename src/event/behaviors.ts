@@ -112,5 +112,13 @@ export function loadBehaviors() {
         }
     });
 
+    bus.on("ping timeout", () => {
+        let now = Date.now();
+
+        for (const socket of socketsByUUID.values()) {
+            if (now - 20000 > socket.gateway.lastPing) socket.destroy();
+        }
+    });
+
     bus.emit("ready");
 }

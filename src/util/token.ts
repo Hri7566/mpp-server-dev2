@@ -33,7 +33,7 @@ export async function createToken(
         if (method === "uuid") {
             token = userId + "." + crypto.randomUUID();
         } else if (method === "jwt") {
-            token = generateJWT(userId, gateway);
+            token = generateJWT(userId, gateway.userAgent);
         }
 
         // Save token
@@ -56,10 +56,10 @@ export async function createToken(
  * @param gateway User gateway instance
  * @returns Signed JWT
  */
-export function generateJWT(userId: string, gateway: Gateway) {
+export function generateJWT(userId: string, userAgent: string) {
     const payload = {
-        userId: userId,
-        gateway
+        userId,
+        userAgent
     };
 
     return jwt.sign(payload, key, {

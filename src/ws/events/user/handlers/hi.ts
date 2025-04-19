@@ -1,4 +1,5 @@
 import { getUserPermissions } from "~/data/permissions";
+import { hasRole } from "~/data/role";
 import { checkChallenge } from "~/util/browserChallenge";
 import { Logger } from "~/util/Logger";
 import { createToken, getTokens, getUserIDFromToken } from "~/util/token";
@@ -65,6 +66,16 @@ export const hi: ServerEventListener<"hi"> = {
         }
 
         await socket.loadUser();
+
+        if (
+            !socket.gateway.hasCompletedBrowserChallenge &&
+            !hasRole(socket.getUserID(), "bot")
+        ) {
+            socket.sendDisconnectNotification(
+                "Using bots outside of a browser without authorization"
+            );
+            return void socket.destroy();
+        }
 
         let part = socket.getParticipant() as User;
         if (!part) {
