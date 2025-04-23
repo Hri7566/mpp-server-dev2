@@ -1,0 +1,5 @@
+services:
+    mpp-server-dev2:
+        build: .
+        ports:
+            - "8443:8443"
