@@ -1,5 +1,5 @@
 import { Logger } from "~/util/Logger";
-import { createSocketID, createUserID } from "../util/id";
+import { createSocketID, createUserIDFromIP } from "../util/id";
 import fs from "node:fs";
 import path from "node:path";
 import { handleMessage } from "./message";
@@ -74,7 +74,7 @@ async function getIndex(path?: string, userID?: string) {
                 configs.urlChannel = ch.getInfo(userID);
             }
         }
-    } catch (err) { }
+    } catch (err) {}
 
     const base64config = btoa(JSON.stringify(configs));
     configs.base64config = base64config;
@@ -127,8 +127,8 @@ export function startHTTPServer() {
             let _id;
 
             try {
-                _id = createUserID(ip);
-            } catch (err) { }
+                _id = createUserIDFromIP(ip);
+            } catch (err) {}
 
             // Time for unreadable blocks of confusion
             try {

@@ -90,18 +90,18 @@ declare type Notification = Partial<{
 declare type CustomTarget = {
     global?: boolean;
 } & (
-        | {
-            mode: "subscribed";
-        }
-        | {
-            mode: "ids";
-            ids: string[];
-        }
-        | {
-            mode: "id";
-            id: string;
-        }
-    );
+    | {
+          mode: "subscribed";
+      }
+    | {
+          mode: "ids";
+          ids: string[];
+      }
+    | {
+          mode: "id";
+          id: string;
+      }
+);
 
 declare interface Crown {
     userId: string;

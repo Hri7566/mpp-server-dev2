@@ -162,7 +162,6 @@ export class Channel extends EventEmitter {
         if (!this.isLobby()) {
             if (set) {
                 // Copied from changeSettings below
-                // TODO do these cases need to be here? can this be determined another way?
                 if (
                     typeof set.color === "string" &&
                     (typeof set.color2 === "undefined" ||
@@ -670,7 +669,6 @@ export class Channel extends EventEmitter {
             }
 
             // Is this channel full?
-            // TODO Implement limit setting here
             if (this.isFull()) {
                 // Is this a genuine lobby (not a test/ room or something)?
                 if (this.isTrueLobby()) {
@@ -734,7 +732,7 @@ export class Channel extends EventEmitter {
             //? original owner. This is strange, because I
             //? specifically remember it working circa 2019-2020.
             if (this.crown && config.chownOnRejoin) {
-                // TODO Should we check participant ID as well?
+                //? Should we check participant ID as well?
                 if (typeof this.crown.userId !== "undefined") {
                     if (socket.getUserID() === this.crown.userId) {
                         // Check if they exist

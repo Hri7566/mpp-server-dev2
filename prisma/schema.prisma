@@ -17,9 +17,14 @@ model User {
   color  String  @default("#ffffff")
   flags  String  @default("{}") // JSON flags object
   tag    String? // JSON tag
-  tokens String  @default("[]") // JSON tokens
+  //tokens String  @default("[]") // JSON tokens
   group  String  @default("default") // Permission group
   Ban    Ban[]
+}
+
+model Token {
+  token String @id @unique
+  userId String
 }
 
 model ChatHistory {

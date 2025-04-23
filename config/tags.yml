@@ -16,3 +16,6 @@ bot:
 owner:
     text: OWNER
     color: "#aa0000"
+dev:
+    text: DEV
+    color: "#5500ff"

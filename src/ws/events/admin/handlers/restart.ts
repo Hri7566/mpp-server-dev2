@@ -2,6 +2,7 @@ import { ServerEventListener } from "~/util/types";
 import { socketsByUUID } from "~/ws/Socket";
 
 let timeout: Timer | undefined;
+const timeoutTime = 20000;
 
 export const restart: ServerEventListener<"restart"> = {
     id: "restart",
@@ -16,7 +17,7 @@ export const restart: ServerEventListener<"restart"> = {
             sock.sendNotification({
                 id: "server-restart",
                 target: "#piano",
-                duration: 20000,
+                duration: timeoutTime,
                 class: "classic",
                 title: "Server Restart",
                 text: "The server is restarting soon."
@@ -26,6 +27,6 @@ export const restart: ServerEventListener<"restart"> = {
         timeout = setTimeout(() => {
             // Stop the program
             process.exit();
-        }, 20000);
+        }, timeoutTime);
     }
 };

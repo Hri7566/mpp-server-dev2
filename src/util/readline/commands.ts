@@ -42,11 +42,13 @@ Command.addCommand(
 Command.addCommand(
     new Command(["memory", "mem"], "memory", msg => {
         const mem = process.memoryUsage();
-        return `Memory: ${(mem.heapUsed / 1000 / 1000).toFixed(2)} MB / ${(
-            mem.heapTotal /
+        return `Memory usage:\nHeap: ${(mem.heapUsed / 1000000).toFixed(
+            2
+        )} MB / ${(mem.heapTotal / 1000000).toFixed(2)} MB\nTotal: ${(
+            mem.rss /
             1000 /
             1000
-        ).toFixed(2)} MB / ${(mem.rss / 1000 / 1000).toFixed(2)} MB`;
+        ).toFixed(2)} MB`;
     })
 );
 
@@ -115,10 +117,10 @@ Command.addCommand(
 
                     return `List of connected sockets:\n${list.join("\n")}`;
                 } else {
-                    return "list <channels, users>";
+                    return "list <channels, users, sockets>";
                 }
             } else {
-                return "list <channels, users>";
+                return "list <channels, users, sockets>";
             }
         }
     )

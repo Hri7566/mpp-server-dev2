@@ -1,9 +1,13 @@
 import { getUserPermissions } from "~/data/permissions";
+import { hasRole } from "~/data/role";
+import { checkChallenge } from "~/util/browserChallenge";
 import { Logger } from "~/util/Logger";
-import { getMOTD } from "~/util/motd";
-import { createToken, getToken, validateToken } from "~/util/token";
-import type { ServerEventListener } from "~/util/types";
-import { BanManager } from "~/ws/BanManager";
+import { createToken, getTokens, getUserIDFromToken } from "~/util/token";
+import type {
+    OutgoingSocketEvents,
+    ServerEventListener,
+    User
+} from "~/util/types";
 import { config } from "~/ws/usersConfig";
 
 const logger = new Logger("Hi handler");
@@ -11,134 +15,78 @@ const logger = new Logger("Hi handler");
 export const hi: ServerEventListener<"hi"> = {
     id: "hi",
     callback: async (msg, socket) => {
-        // Handshake message
-        if (socket.rateLimits)
-            if (!socket.rateLimits.normal.hi.attempt()) return;
-
-        if (socket.gateway.hasProcessedHi) return;
-
-        // Socket ban (IP ban) check
-        const ip = socket.getIP();
-        const isBanned = await BanManager.isSocketBanned(ip);
-
-        // logger.debug("isBanned:", isBanned);
-
-        if (isBanned) {
-            const duration = await BanManager.getSocketBanTimeRemaining(ip);
-            const reasons = await BanManager.getSocketBanReasons(ip);
-
-            socket.sendBanNotification(
-                duration || "forever(?)",
-                reasons
-                    ? typeof reasons === "string"
-                        ? reasons
-                        : reasons.join(", ")
-                    : undefined
-            );
-
-            return socket.destroy();
-        }
-
-        // Browser challenge
-        if (config.browserChallenge === "basic") {
-            try {
-                if (typeof msg.code !== "string") return;
-                const code = atob(msg.code);
-                const arr = JSON.parse(code);
-
-                if (arr[0] === true) {
-                    socket.gateway.hasCompletedBrowserChallenge = true;
-
-                    if (typeof arr[1] === "string") {
-                        socket.gateway.userAgent = arr[1];
-                    }
-                }
-            } catch (err) {
-                logger.warn(
-                    "Unable to parse basic browser challenge code:",
-                    err
-                );
-            }
-        } else if (config.browserChallenge === "obf") {
-            // TODO
-        }
-
-        // Is the browser challenge enabled and has the user completed it?
-        if (
-            config.browserChallenge !== "none" &&
-            !socket.gateway.hasCompletedBrowserChallenge
-        ) {
-            // return socket.ban(60000, "Incomplete browser challenge");
-
-            // FIXME implement ban
-            return socket.destroy();
-        }
-
-        // Token auth
-
         let token: string | undefined;
-        let generatedToken = false;
+
+        // Browser challenge check
+        checkChallenge(socket, msg.code);
 
         if (config.tokenAuth !== "none") {
-            if (typeof msg.token !== "string") {
-                // Get a saved token
-                token = await getToken(socket.getUserID());
+            // Token validator
+            if (typeof msg.token === "string") {
+                // They sent us a token, get the user from that token
+                const userID = await getUserIDFromToken(msg.token);
 
-                // Does it exist?
-                if (typeof token !== "string") {
-                    // Generate a new one
-                    token = await createToken(
-                        socket.getUserID(),
-                        socket.gateway
-                    );
-
-                    socket.gateway.isTokenValid = true;
-
-                    // Does it exist? (again)
-                    if (typeof token !== "string") {
-                        logger.warn(
-                            `Unable to generate token for user ${socket.getUserID()}`
-                        );
-                    } else {
-                        generatedToken = true;
-                    }
-                }
-            } else {
-                socket.gateway.hasSentToken = true;
-
-                // Validate the token
-                const valid = await validateToken(
-                    socket.getUserID(),
-                    msg.token
-                );
-                if (!valid) {
-                    //socket.ban(60000, "Invalid token");
-                    //return;
+                if (!userID) {
+                    socket.sendDisconnectNotification("Invalid token");
+                    return void socket.destroy();
                 } else {
                     token = msg.token;
-                    socket.gateway.isTokenValid = true;
+                    socket.setUserID(userID);
                 }
+            } else if (typeof msg.token === "undefined") {
+                let tokens = await getTokens(socket.getUserID());
+
+                if (!Array.isArray(tokens)) tokens = [];
+
+                if (!tokens[0]) {
+                    try {
+                        token = await createToken(
+                            socket.getUserID(),
+                            socket.gateway
+                        );
+                    } catch (err) {
+                        logger.error("Unable to generate token:", err);
+                        socket.sendDisconnectNotification(
+                            "Unable to generate token"
+                        );
+                        return void socket.destroy();
+                    }
+                } else {
+                    token = tokens[0].token;
+                }
+            } else {
+                socket.sendDisconnectNotification("Invalid token format");
+                return void socket.destroy();
+            }
+
+            if (!token) {
+                socket.sendDisconnectNotification("Unable to handle token");
+                return void socket.destroy();
             }
         }
 
-        let part = socket.getParticipant();
+        await socket.loadUser();
 
+        if (
+            !socket.gateway.hasCompletedBrowserChallenge &&
+            !hasRole(socket.getUserID(), "bot")
+        ) {
+            socket.sendDisconnectNotification(
+                "Using bots outside of a browser without authorization"
+            );
+            return void socket.destroy();
+        }
+
+        let part = socket.getParticipant() as User;
         if (!part) {
             part = {
                 _id: socket.getUserID(),
-                name: "Anonymous",
-                color: "#777",
-                id: "",
-                tag: undefined
+                name: config.defaultName,
+                color: "#777"
             };
         }
 
-        //logger.debug("Tag:", part.tag);
-
-        const permissions: Record<string, boolean> = {};
-        (await getUserPermissions(socket.getUserID())).map(perm => {
-            permissions[perm] = true;
-        });
+        const permissions = getUserPermissions(socket.getUserID());
 
         socket.sendArray([
             {
@@ -148,15 +96,12 @@ export const hi: ServerEventListener<"hi"> = {
                 t: Date.now(),
                 u: {
                     _id: part._id,
-                    color: part.color,
                     name: part.name,
+                    color: part.color,
                     tag: config.enableTags ? part.tag : undefined
                 },
-                motd: getMOTD(),
                 token
-            }
+            } as OutgoingSocketEvents["hi"]
         ]);
-
-        socket.gateway.hasProcessedHi = true;
     }
 };

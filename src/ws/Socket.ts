@@ -4,7 +4,7 @@
  * Represents user connections
  */
 
-import { createColor, createID, createUserID } from "~/util/id";
+import { createColor, createID, createUserIDFromIP } from "~/util/id";
 import EventEmitter from "events";
 import type {
     IChannelInfo,
@@ -41,6 +41,7 @@ import { getUserPermissions, validatePermission } from "~/data/permissions";
 import { removeTag, setTag } from "~/util/tags";
 import { notificationConfig } from "~/util/notificationConfig";
 import { formatMillisecondsRemaining } from "~/util/helpers";
+import crypto from "crypto";
 
 const logger = new Logger("Sockets");
 
@@ -92,7 +93,8 @@ export class Socket extends EventEmitter {
         }
 
         // User ID
-        this._id = createUserID(this.getIP());
+        // also set in hi message from token check
+        this._id = createUserIDFromIP(this.getIP());
         this.uuid = crypto.randomUUID();
 
         // Check if we're already connected
@@ -185,6 +187,14 @@ export class Socket extends EventEmitter {
      **/
     public getUserID() {
         return this._id;
+    }
+
+    /**
+     * Change this socket's user ID (DANGEROUS!)
+     * @param _id New user ID
+     */
+    public setUserID(_id: string) {
+        this._id = _id;
     }
 
     /**
@@ -300,13 +310,13 @@ export class Socket extends EventEmitter {
     }
 
     /**
-     * Load this socket's user data
+     * Load this socket's user data (DANGEROUS!)
      **/
-    private async loadUser() {
+    public async loadUser() {
         let user = await readUser(this._id);
 
         if (!user || user == null) {
-            //logger.debug("my fancy new ID:", this._id);
+            // User doesn't exist yet, create a new one
             await createUser(
                 this._id,
                 config.defaultName,
@@ -866,6 +876,18 @@ export class Socket extends EventEmitter {
         this.sendNotification({
             title: "Notice",
             text: `You have been banned from the server for ${duration}.${
+                reason ? ` Reason: ${reason}` : ""
+            }`,
+            duration: 20000,
+            target: "#room",
+            class: "classic"
+        });
+    }
+
+    public sendDisconnectNotification(reason?: string) {
+        this.sendNotification({
+            title: "Notice",
+            text: `You have been disconnected from the server.${
                 reason ? ` Reason: ${reason}` : ""
             }`,
             duration: 20000,
