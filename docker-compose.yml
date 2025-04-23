@@ -3,3 +3,8 @@ services:
         build: .
         ports:
             - "8443:8443"
+        volumes:
+            - ./config:/usr/src/app/config
+            - ./public:/usr/src/app/public
+            - ./prisma:/usr/src/app/prisma
+            - ./logs:/usr/src/app/logs
