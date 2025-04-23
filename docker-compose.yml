@@ -1,6 +1,10 @@
 services:
     mpp-server-dev2:
         build: .
+        tty: true
+        stdin_open: true
+        restart: always
+        user: root
         ports:
             - "8443:8443"
         volumes:
