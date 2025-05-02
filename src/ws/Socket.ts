@@ -68,9 +68,9 @@ export class Socket extends EventEmitter {
         _id: string | undefined;
         set: Partial<IChannelSettings> | undefined;
     } = {
-        _id: undefined,
-        set: {}
-    };
+            _id: undefined,
+            set: {}
+        };
 
     public currentChannelID: string | undefined;
     private cursorPos: Vector2<CursorValue> = { x: 200, y: 100 };
@@ -87,9 +87,8 @@ export class Socket extends EventEmitter {
             this.ip = ws.data.ip;
         } else {
             // Fake user
-            this.ip = `::ffff:${Math.random() * 255}.${Math.random() * 255}.${
-                Math.random() * 255
-            }.${Math.random() * 255}`;
+            this.ip = `::ffff:${Math.random() * 255}.${Math.random() * 255}.${Math.random() * 255
+                }.${Math.random() * 255}`;
         }
 
         // User ID
@@ -400,7 +399,7 @@ export class Socket extends EventEmitter {
             try {
                 if (typeof this.user.tag === "string")
                     tag = JSON.parse(this.user.tag) as Tag;
-            } catch (err) {}
+            } catch (err) { }
 
             return {
                 _id: facadeID,
@@ -539,11 +538,13 @@ export class Socket extends EventEmitter {
                 typeof color === "string" && !!color.match(/^#[0-9a-f]{6}$/i);
         }
 
-        if (typeof name !== "string") return;
-        if (name.length > 40) return;
+        if (typeof name !== "undefined") {
+            if (typeof name !== "string") return;
+            if (name.length > 40) return;
+        }
 
         await updateUser(this._id, {
-            name: typeof name === "string" ? name : undefined,
+            name,
             color: color && isColor ? color : undefined
         });
 
@@ -875,9 +876,8 @@ export class Socket extends EventEmitter {
 
         this.sendNotification({
             title: "Notice",
-            text: `You have been banned from the server for ${duration}.${
-                reason ? ` Reason: ${reason}` : ""
-            }`,
+            text: `You have been banned from the server for ${duration}.${reason ? ` Reason: ${reason}` : ""
+                }`,
             duration: 20000,
             target: "#room",
             class: "classic"
@@ -887,9 +887,8 @@ export class Socket extends EventEmitter {
     public sendDisconnectNotification(reason?: string) {
         this.sendNotification({
             title: "Notice",
-            text: `You have been disconnected from the server.${
-                reason ? ` Reason: ${reason}` : ""
-            }`,
+            text: `You have been disconnected from the server.${reason ? ` Reason: ${reason}` : ""
+                }`,
             duration: 20000,
             target: "#room",
             class: "classic"
