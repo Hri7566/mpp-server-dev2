@@ -115,5 +115,7 @@ export function createColor(_id: string) {
         );
     } else if (config.colorGeneration == "white") {
         return "#ffffff";
+    } else {
+        return "#" + Math.floor(Math.random() * 16777215).toString(16);
     }
 }
