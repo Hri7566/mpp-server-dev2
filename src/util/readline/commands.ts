@@ -14,7 +14,7 @@ import {
     removeAllRolePermissions,
     removeRolePermission
 } from "~/data/permissions";
-import { builtinTags, getTag, removeTag, setBuiltinTag, setTag } from "../tags";
+import { builtinTags, getTag, removeTag, setTagBuiltin, setTag } from "../tags";
 import logger from "./logger";
 import { socketsByUUID } from "~/ws/Socket";
 import { createColor, createUserIDFromIP } from "../id";
@@ -146,7 +146,7 @@ Command.addCommand(
                 if (!msg.args[3]) return "No role id provided";
 
                 await giveRole(msg.args[2], msg.args[3]);
-                await setBuiltinTag(msg.args[2], msg.args[3]);
+                await setTagBuiltin(msg.args[2], msg.args[3]);
 
                 return `Gave user ${msg.args[2]} role ${msg.args[3]}`;
             } else if (msg.args[1] === "remove") {
@@ -318,7 +318,7 @@ Command.addCommand(
                     const tag = msg.args[4];
                     if (!tag)
                         return "tag <set> <user id> <builtin> <builtin id>";
-                    await setBuiltinTag(userId, tag);
+                    await setTagBuiltin(userId, tag);
                     return `Set builtin tag ${tag} for ${userId}`;
                 } else if (type == "custom") {
                     if (!msg.args[4])
