@@ -43,7 +43,7 @@ function propogateUser(user: User) {
     bus.emit("user data update", user);
 }
 
-export async function setBuiltinTag(userId: string, tagId: string) {
+export async function setTagBuiltin(userId: string, tagId: string) {
     const user = await readUser(userId);
     if (!user) return;
 
