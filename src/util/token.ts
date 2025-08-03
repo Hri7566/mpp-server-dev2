@@ -34,6 +34,8 @@ export async function createToken(
             token = userId + "." + crypto.randomUUID();
         } else if (method === "jwt") {
             token = generateJWT(userId, gateway.userAgent);
+        } else {
+            throw new Error("No token method is configured");
         }
 
         // Save token
