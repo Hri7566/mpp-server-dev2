@@ -1,6 +1,11 @@
 import { getRoles, giveRole, removeRole } from "~/data/role";
 import { ChannelList } from "../../channel/ChannelList";
-import { deleteAllUsers, deleteUser, getUsers } from "../../data/user";
+import {
+    createUser,
+    deleteAllUsers,
+    deleteUser,
+    getUsers
+} from "../../data/user";
 import Command from "./Command";
 import {
     addRolePermission,
@@ -12,8 +17,11 @@ import {
 import { builtinTags, getTag, removeTag, setTagBuiltin, setTag } from "../tags";
 import logger from "./logger";
 import { socketsByUUID } from "~/ws/Socket";
-import { createColor } from "../id";
+import { createColor, createUserIDFromIP } from "../id";
 import { BanManager } from "~/ws/BanManager";
+import { createToken, deleteAllTokens, getTokens } from "../token";
+import { Gateway } from "~/ws/Gateway";
+import { config as usersConfig } from "~/ws/usersConfig";
 
 Command.addCommand(
     new Command(["help", "h", "commands", "cmds"], "help", msg => {
@@ -435,5 +443,59 @@ Command.addCommand(
         }
 
         return "No user found (IPs are not saved, they have to be online)";
+    })
+);
+
+Command.addCommand(
+    new Command(["resettoken", "rtoken"], "resettoken <userId>", async msg => {
+        const _id = msg.args[1];
+
+        if (!_id) return `Usage: resettoken <userId>`;
+        await deleteAllTokens(_id);
+
+        const gateway = new Gateway();
+        const token = await createToken(_id, gateway);
+
+        return `New token for ${_id}: ${token}`;
+    })
+);
+
+Command.addCommand(
+    new Command(["deletetoken", "deltoken"], "deltoken <userId>", async msg => {
+        const _id = msg.args[1];
+
+        if (!_id) return `Usage: resettoken <userId>`;
+        await deleteAllTokens(_id);
+
+        return `Deleted all tokens for ${_id}`;
+    })
+);
+
+Command.addCommand(
+    new Command(["createbot"], "createbot", async msg => {
+        const fake = crypto.randomUUID();
+        const id = createUserIDFromIP(fake);
+        const color = createColor(id);
+        const user = await createUser(
+            id,
+            undefined,
+            color,
+            usersConfig.defaultFlags,
+            builtinTags.bot
+        );
+
+        return `Created bot with user ID ${user.id}`;
+    })
+);
+
+Command.addCommand(
+    new Command(["gettoken", "gettokens"], "gettoken <userId>", async msg => {
+        const _id = msg.args[1];
+        if (!_id) return `Usage: gettoken <userId>`;
+        const tokens = await getTokens(_id);
+        if (!tokens || tokens.length == 0) return `User ${_id} has no tokens.`;
+        return `Tokens for user ${_id}: ${tokens
+            ?.map(t => t.token)
+            .join(" | ")}`;
     })
 );

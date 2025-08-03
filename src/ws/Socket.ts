@@ -54,7 +54,7 @@ type CursorValue = string | number;
  * This is likely the source of my memory leaks
  **/
 export class Socket extends EventEmitter {
-    private id: string;
+    private id: string | undefined;
     private _id: string;
     private ip: string;
     private uuid: string;
@@ -126,23 +126,6 @@ export class Socket extends EventEmitter {
             this.destroy();
         }
 
-        // logger.debug("Found socket?", foundSocket);
-
-        // If there is another socket, use their ID for some reason I forgot
-        // otherwise, make a new one
-        if (!foundSocket) {
-            // Use new session ID
-            this.id = createID();
-        } else {
-            // Use original session ID
-            this.id = foundSocket.id;
-
-            // Break us off
-            // didn't work nvm
-            //this.id = "broken";
-            //this.destroy();
-        }
-
         // Load stuff
         (async () => {
             // Load our user data
@@ -204,6 +187,14 @@ export class Socket extends EventEmitter {
      **/
     public getParticipantID() {
         return this.id;
+    }
+
+    /**
+     * Set the participant ID (id) of this socket
+     * @param id Participant ID
+     */
+    public setParticipantID(id: string) {
+        this.id = id;
     }
 
     /**
@@ -385,34 +376,35 @@ export class Socket extends EventEmitter {
      * Get this socket's participant data
      * @returns Participant object
      **/
-    public getParticipant() {
-        if (this.user) {
-            const flags = this.getUserFlags();
-            let facadeID = this._id;
+    public getParticipant(): IParticipant | null {
+        if (!this.user) return null;
 
-            if (flags) {
-                if (flags.override_id) {
-                    facadeID = flags.override_id;
-                }
+        const flags = this.getUserFlags();
+        let faceID = this._id;
+
+        if (flags) {
+            if (flags.override_id) {
+                faceID = flags.override_id;
             }
-
-            let tag: Tag | undefined;
-
-            try {
-                if (typeof this.user.tag === "string")
-                    tag = JSON.parse(this.user.tag) as Tag;
-            } catch (err) {}
-
-            return {
-                _id: facadeID,
-                name: this.user.name,
-                color: this.user.color,
-                id: this.getParticipantID(),
-                tag: config.enableTags ? tag : undefined
-            };
         }
 
-        return null;
+        let tag: Tag | undefined;
+
+        try {
+            if (typeof this.user.tag === "string")
+                tag = JSON.parse(this.user.tag) as Tag;
+        } catch (err) {}
+
+        const partID = this.getParticipantID();
+        if (!partID) return null; // not connected to channel?
+
+        return {
+            _id: faceID,
+            name: this.user.name,
+            color: this.user.color,
+            id: partID,
+            tag: config.enableTags ? tag : undefined
+        };
     }
 
     private destroyed = false;

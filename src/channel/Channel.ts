@@ -34,6 +34,7 @@ import {
 import { forceloadChannel } from "./forceload";
 import { getRolePermissions } from "~/data/permissions";
 import { getRoles } from "~/data/role";
+import { createID } from "~/util/id";
 
 interface CachedKickban {
     userId: string;
@@ -627,7 +628,17 @@ export class Channel extends EventEmitter {
      */
     public join(socket: Socket, force = false): void {
         if (this.isDestroyed()) return;
-        const part = socket.getParticipant() as IParticipant;
+        let part = socket.getParticipant();
+        const partid = socket.getParticipantID();
+        if (!partid) {
+            // get id if part is already here, or assign new id
+            const p = this.ppl.find(p => p._id === socket.getUserID());
+            if (p) socket.setParticipantID(p.id);
+            else socket.setParticipantID(createID());
+            part = socket.getParticipant();
+        }
+
+        if (!part) return void socket.destroy(); // broken user
 
         let hasChangedChannel = false;
 
