@@ -288,6 +288,10 @@ export class Socket extends EventEmitter {
                 }
             }
         }
+
+        bus.on("user data update", user => {
+            this.loadUser();
+        });
     }
 
     /**

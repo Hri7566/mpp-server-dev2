@@ -340,7 +340,12 @@ export class Channel extends EventEmitter {
                     .replace(/(\p{Mc}{5})\p{Mc}+/gu, "$1")
                     .trim();
 
-                const part = socket.getParticipant() as IParticipant;
+                let part = socket.getParticipant();
+                if (!part)
+                    part =
+                        this.ppl.find(p => p._id === socket.getUserID()) ??
+                        null;
+                if (!part) return;
 
                 const outgoing: OutgoingSocketEvents["a"] = {
                     m: "a",
