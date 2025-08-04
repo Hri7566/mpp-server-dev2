@@ -14,6 +14,14 @@ export const notification: ServerEventListener<"notification"> = {
             return;
 
         if (msg.duration) {
+            if (typeof msg.duration === "string") {
+                try {
+                    msg.duration = parseFloat(msg.duration);
+                } catch (err) {
+                    return;
+                }
+            }
+
             if (msg.duration > config.maxDuration)
                 msg.duration = config.maxDuration;
         } else {

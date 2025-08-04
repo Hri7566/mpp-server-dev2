@@ -55,118 +55,118 @@ export const config = ConfigManager.loadConfig<RateLimitsConfig>(
     {
         user: {
             normal: {
-                a: 6000 / 4,
-                m: 1000 / 20,
-                ch: 1000 / 8,
-                kickban: 1000 / 16,
-                unban: 1000 / 16,
-                t: 1000 / 128,
-                "+ls": 1000 / 60,
-                "-ls": 1000 / 60,
-                chown: 2000,
+                a: 250,
+                m: 40,
+                ch: 100,
+                kickban: 50,
+                unban: 50,
+                t: 10,
+                "+ls": 15,
+                "-ls": 15,
+                chown: 500,
 
-                "+custom": 1000 / 60,
-                "-custom": 1000 / 60,
+                "+custom": 10,
+                "-custom": 10,
 
-                hi: 1000 / 20,
-                bye: 1000 / 20,
-                devices: 1000 / 20,
-                "admin message": 1000 / 20
+                hi: 100,
+                bye: 100,
+                devices: 100,
+                "admin message": 10
             },
             chains: {
                 userset: {
-                    interval: 1000 * 60 * 30,
+                    interval: 1000 * 60,
                     num: 1000
                 },
                 chset: {
-                    interval: 1000 * 60 * 30,
+                    interval: 1000 * 60,
                     num: 1024
                 },
                 n: {
-                    interval: 2000,
-                    num: 1200
+                    interval: 1000,
+                    num: 2000
                 },
                 custom: {
                     interval: 1000,
-                    num: 512
+                    num: 1024
                 }
             }
         },
         crown: {
             normal: {
-                a: 6000 / 10,
-                m: 1000 / 20,
-                ch: 1000 / 8,
-                kickban: 1000 / 16,
-                unban: 1000 / 16,
-                t: 1000 / 128,
-                "+ls": 1000 / 60,
-                "-ls": 1000 / 60,
-                chown: 2000,
+                a: 50,
+                m: 40,
+                ch: 100,
+                kickban: 50,
+                unban: 50,
+                t: 10,
+                "+ls": 15,
+                "-ls": 15,
+                chown: 500,
 
-                "+custom": 1000 / 60,
-                "-custom": 1000 / 60,
+                "+custom": 10,
+                "-custom": 10,
 
-                hi: 1000 / 20,
-                bye: 1000 / 20,
-                devices: 1000 / 20,
-                "admin message": 1000 / 20
+                hi: 100,
+                bye: 100,
+                devices: 100,
+                "admin message": 10
             },
             chains: {
                 userset: {
-                    interval: 1000 * 60 * 30,
+                    interval: 1000 * 60,
                     num: 1000
                 },
                 chset: {
-                    interval: 1000 * 60 * 30,
+                    interval: 1000 * 60,
                     num: 1024
                 },
                 n: {
-                    interval: 2000,
-                    num: 1800
+                    interval: 1000,
+                    num: 2000
                 },
                 custom: {
                     interval: 1000,
-                    num: 512
+                    num: 1024
                 }
             }
         },
         admin: {
             normal: {
-                a: 6000 / 50,
-                m: 1000 / 60,
-                ch: 1000 / 10,
-                kickban: 1000 / 60,
-                unban: 1000 / 8,
-                t: 1000 / 256,
-                "+ls": 1000 / 60,
-                "-ls": 1000 / 60,
-                chown: 500,
+                a: 10,
+                m: 10,
+                ch: 10,
+                kickban: 10,
+                unban: 10,
+                t: 10,
+                "+ls": 10,
+                "-ls": 10,
+                chown: 10,
 
-                "+custom": 1000 / 120,
-                "-custom": 1000 / 120,
+                "+custom": 10,
+                "-custom": 10,
 
-                hi: 1000 / 20,
-                bye: 1000 / 20,
-                devices: 1000 / 20,
-                "admin message": 1000 / 60
+                hi: 10,
+                bye: 10,
+                devices: 10,
+                "admin message": 10
             },
             chains: {
                 userset: {
                     interval: 500,
-                    num: 1000
+                    num: 100000
                 },
                 chset: {
-                    interval: 1000 * 60 * 30,
+                    interval: 1000 * 60,
                     num: 1024
                 },
                 n: {
                     interval: 50,
-                    num: 24000
+                    num: 2400000
                 },
                 custom: {
                     interval: 1000 * 60,
-                    num: 20000
+                    num: 2000000
                 }
             }
         }
