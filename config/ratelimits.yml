@@ -1,90 +1,90 @@
 user:
     normal:
-        a: 1500
-        m: 50
-        ch: 1000
-        kickban: 125
-        unban: 125
-        t: 7.8125
-        +ls: 16.666666666666668
-        -ls: 16.666666666666668
-        chown: 2000
-        hi: 50
-        bye: 50
-        devices: 50
-        admin message: 50
-        +custom: 16.666666666666668
-        -custom: 16.666666666666668
+        a: 250
+        m: 40
+        ch: 100
+        kickban: 50
+        unban: 50
+        t: 10
+        +ls: 15
+        -ls: 15
+        chown: 500
+        +custom: 10
+        -custom: 10
+        hi: 100
+        bye: 100
+        devices: 100
+        admin message: 10
     chains:
         userset:
-            interval: 1800000
+            interval: 60000
             num: 1000
         chset:
-            interval: 1800000
+            interval: 60000
             num: 1024
         n:
             interval: 1000
-            num: 512
+            num: 2000
         custom:
             interval: 1000
-            num: 512
+            num: 1024
 crown:
     normal:
-        a: 600
-        m: 50
-        ch: 1000
-        kickban: 125
-        unban: 125
-        t: 7.8125
-        +ls: 16.666666666666668
-        -ls: 16.666666666666668
-        chown: 2000
-        hi: 50
-        bye: 50
-        devices: 50
-        admin message: 50
-        +custom: 16.666666666666668
-        -custom: 16.666666666666668
+        a: 50
+        m: 40
+        ch: 100
+        kickban: 50
+        unban: 50
+        t: 10
+        +ls: 15
+        -ls: 15
+        chown: 500
+        +custom: 10
+        -custom: 10
+        hi: 100
+        bye: 100
+        devices: 100
+        admin message: 10
     chains:
         userset:
-            interval: 1800000
+            interval: 60000
             num: 1000
         chset:
-            interval: 1800000
+            interval: 60000
             num: 1024
         n:
             interval: 1000
-            num: 512
+            num: 2000
         custom:
             interval: 1000
-            num: 512
+            num: 1024
 admin:
     normal:
-        a: 120
-        m: 16.666666666666668
-        ch: 100
-        kickban: 16.666666666666668
-        unban: 125
-        t: 3.90625
-        +ls: 16.666666666666668
-        -ls: 16.666666666666668
-        chown: 500
-        hi: 50
-        bye: 50
-        devices: 50
-        admin message: 16.666666666666668
-        +custom: 8.333333333333334
-        -custom: 8.333333333333334
+        a: 10
+        m: 10
+        ch: 10
+        kickban: 10
+        unban: 10
+        t: 10
+        +ls: 10
+        -ls: 10
+        chown: 10
+        +custom: 10
+        -custom: 10
+        hi: 10
+        bye: 10
+        devices: 10
+        admin message: 10
     chains:
         userset:
             interval: 500
-            num: 1000
+            num: 100000
         chset:
-            interval: 1800000
+            interval: 60000
             num: 1024
         n:
             interval: 50
-            num: 512
+            num: 2400000
         custom:
             interval: 60000
-            num: 20000
+            num: 2000000
