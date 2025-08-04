@@ -17,6 +17,6 @@ export const color: ServerEventListener<"color"> = {
 
         user.color = color;
         await updateUser(id, user);
-        bus.emit("user data update", user);
+        bus.emit("user data update", await readUser(msg._id));
     }
 };

@@ -289,8 +289,8 @@ export class Socket extends EventEmitter {
             }
         }
 
-        bus.on("user data update", user => {
-            this.loadUser();
+        bus.on("user data update", async user => {
+            if (user.id === this.getUserID()) await this.loadUser();
         });
     }
 
@@ -545,8 +545,6 @@ export class Socket extends EventEmitter {
             name,
             color: color && isColor ? color : undefined
         });
-
-        await this.loadUser();
 
         bus.emit("user data update", this.getUser());
 
