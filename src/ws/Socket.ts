@@ -546,6 +546,11 @@ export class Socket extends EventEmitter {
             color: color && isColor ? color : undefined
         });
 
+        if (this.user) {
+            if (name) this.user.name = name;
+            if (isColor && color) this.user.color = color;
+        }
+
         bus.emit("user data update", this.getUser());
 
         const ch = this.getCurrentChannel();
