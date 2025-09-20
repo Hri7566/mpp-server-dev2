@@ -32,7 +32,6 @@ import {
     saveChannel
 } from "../data/channel";
 import { forceloadChannel } from "./forceload";
-import { getRolePermissions } from "~/data/permissions";
 import { getRoles } from "~/data/role";
 import { createID } from "~/util/id";
 
@@ -231,14 +230,21 @@ export class Channel extends EventEmitter {
         this.on("update", (self, uuid) => {
             // Propogate channel flags intended to be updated
             this.emit("update_flags", self, uuid);
+            //this.logger.debug("update");
 
-            // this.logger.debug("update");
             // Send updated info
             for (const socket of socketsByUUID.values()) {
                 for (const p of this.ppl) {
                     const socketUUID = socket.getUUID();
 
                     if (p.uuids.includes(socketUUID) && socketUUID !== uuid) {
+                        /*
+                        this.logger.debug(
+                            "sending update to",
+                            p._id,
+                            `(${p.uuids.join(", ")})`
+                        );
+						*/
                         socket.sendChannelUpdate(
                             this.getInfo(),
                             this.getParticipantList()
@@ -292,6 +298,88 @@ export class Channel extends EventEmitter {
 
             if (this.flags.no_crown) {
                 delete this.crown;
+            }
+        });
+
+        this.on("user data update", (user: User) => {
+            try {
+                if (!this.ppl.map(p => p._id).includes(user.id)) return;
+                if (typeof user.name !== "string") return;
+                if (typeof user.color !== "string") return;
+                if (typeof user.id !== "string") return;
+                if (
+                    typeof user.tag !== "undefined" &&
+                    typeof user.tag !== "string"
+                )
+                    return;
+                if (
+                    typeof user.flags !== "undefined" &&
+                    typeof user.flags !== "string"
+                )
+                    return;
+
+                let tag: Tag | undefined;
+                let flags: UserFlags | undefined;
+
+                try {
+                    tag = JSON.parse(user.tag);
+                } catch (err) {}
+
+                try {
+                    flags = JSON.parse(user.flags) as UserFlags;
+                } catch (err) {}
+
+                for (const p of this.ppl) {
+                    if (p._id !== user.id) continue;
+
+                    p._id = user.id;
+                    p.name = user.name;
+                    p.color = user.color;
+                    p.tag = tag;
+                    if (flags) p.flags = flags;
+
+                    let cache: CachedCursor | undefined;
+
+                    for (const cursor of this.cursorCache) {
+                        if (cursor.id === p.id) {
+                            cache = cursor;
+                        }
+                    }
+
+                    let x: string | number = "0.00";
+                    let y: string | number = "-10.00";
+
+                    if (cache) {
+                        x = cache.x;
+                        y = cache.y;
+                    }
+
+                    /*
+                    this.logger.debug(
+                        "Sending user data update to",
+                        p._id,
+                        `(${p.id})`
+                    );
+					*/
+                    this.sendArray([
+                        {
+                            m: "p",
+                            _id: p._id,
+                            name: p.name,
+                            color: p.color,
+                            id: p.id,
+                            x: x,
+                            y: y,
+                            tag: usersConfig.enableTags ? p.tag : undefined
+                        }
+                    ]);
+                }
+
+                //this.logger.debug("Update from user data update handler");
+                this.emit("update", this);
+            } catch (err) {
+                this.logger.error(err);
+                this.logger.warn("Unable to update user");
             }
         });
 
@@ -389,87 +477,10 @@ export class Channel extends EventEmitter {
             if (cmd === "mem") {
                 this.printMemoryInChat();
             } else if (cmd === "roles") {
-                this.logger.debug(roles);
+                //this.logger.debug(roles);
                 this.sendChatAdmin(
                     `Roles: ${roles.map(r => r.roleId).join(", ")}`
                 );
-            }
-        });
-
-        this.on("user data update", (user: User) => {
-            try {
-                if (!this.ppl.map(p => p._id).includes(user.id)) return;
-                if (typeof user.name !== "string") return;
-                if (typeof user.color !== "string") return;
-                if (typeof user.id !== "string") return;
-                if (
-                    typeof user.tag !== "undefined" &&
-                    typeof user.tag !== "string"
-                )
-                    return;
-                if (
-                    typeof user.flags !== "undefined" &&
-                    typeof user.flags !== "string"
-                )
-                    return;
-
-                let tag: Tag | undefined;
-                let flags: UserFlags | undefined;
-
-                try {
-                    tag = JSON.parse(user.tag);
-                } catch (err) {}
-
-                try {
-                    flags = JSON.parse(user.flags) as UserFlags;
-                } catch (err) {}
-
-                for (const p of this.ppl) {
-                    if (p._id !== user.id) continue;
-
-                    p._id = user.id;
-                    p.name = user.name;
-                    p.color = user.color;
-                    p.tag = tag;
-                    if (flags) p.flags = flags;
-
-                    let found:
-                        | { x: string | number; y: string | number; id: string }
-                        | undefined;
-
-                    for (const cursor of this.cursorCache) {
-                        if (cursor.id === p.id) {
-                            found = cursor;
-                        }
-                    }
-
-                    let x: string | number = "0.00";
-                    let y: string | number = "-10.00";
-
-                    if (found) {
-                        x = found.x;
-                        y = found.y;
-                    }
-
-                    this.sendArray([
-                        {
-                            m: "p",
-                            _id: p._id,
-                            name: p.name,
-                            color: p.color,
-                            id: p.id,
-                            x: x,
-                            y: y,
-                            tag: usersConfig.enableTags ? p.tag : undefined
-                        }
-                    ]);
-                }
-
-                //this.logger.debug("Update from user data update handler");
-                this.emit("update", this);
-            } catch (err) {
-                this.logger.error(err);
-                this.logger.warn("Unable to update user");
             }
         });
 

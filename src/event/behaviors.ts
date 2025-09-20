@@ -88,6 +88,7 @@ export function loadBehaviors() {
 
     bus.on("user data update", user => {
         for (const ch of ChannelList.getList()) {
+            //logger.debug(`Emitting user update to channel ${ch.getID()}`);
             ch.emit("user data update", user);
         }
     });
