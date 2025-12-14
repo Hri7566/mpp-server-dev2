@@ -19,7 +19,9 @@ export const userset: ServerEventListener<"userset"> = {
             });
 
             socket.destroy();
+            return;
         }
+
         if (
             typeof msg.set.name !== "undefined" &&
             typeof msg.set.name !== "string"
