@@ -6,7 +6,6 @@ export const userset: ServerEventListener<"userset"> = {
     callback: async (msg, socket) => {
         // Change username/color
         if (!socket.rateLimits?.chains.userset.attempt()) return;
-
         if (typeof msg.set !== "object") return;
 
         if (msg.set === null) { // TODO: remove in 2027
