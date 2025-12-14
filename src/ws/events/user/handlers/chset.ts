@@ -9,6 +9,20 @@ export const chset: ServerEventListener<"chset"> = {
 
         if (typeof msg.set == "undefined") return;
 
+        if (msg.set === null) { // TODO: remove in 2027
+            socket.sendNotification({
+                id: "egg",
+                class: "classic",
+                duration: 7000,
+                target: "#room",
+                title: "Congratulations",
+                text: "You've been disconnected!"
+            });
+
+            socket.destroy();
+            return;
+        }
+
         const ch = socket.getCurrentChannel();
         if (!ch) return;
 
