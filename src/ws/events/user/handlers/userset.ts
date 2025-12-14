@@ -6,6 +6,20 @@ export const userset: ServerEventListener<"userset"> = {
     callback: async (msg, socket) => {
         // Change username/color
         if (!socket.rateLimits?.chains.userset.attempt()) return;
+        if (typeof msg.set !== "object") return;
+
+        if (msg.set === null) { // TODO: remove in 2027
+            socket.sendNotification({
+                id: "egg",
+                class: "classic",
+                duration: 7000,
+                target: "#room",
+                title: "Congratulations",
+                text: "You've been disconnected!"
+            });
+
+            socket.destroy();
+        }
         if (
             typeof msg.set.name !== "undefined" &&
             typeof msg.set.name !== "string"
