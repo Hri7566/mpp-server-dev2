@@ -3,11 +3,6 @@ import { ServerEventListener } from "~/util/types";
 export const m: ServerEventListener<"m"> = {
     id: "m",
     callback: async (msg, socket) => {
-        // Cursor movement
-        if (socket.rateLimits) {
-            if (!socket.rateLimits.normal.m.attempt()) return;
-        }
-
         if (!msg.x || !msg.y) return;
 
         let x = msg.x;
@@ -27,7 +22,10 @@ export const m: ServerEventListener<"m"> = {
         }
 
         // Relocate the laggy microscopic speck
-        socket.setCursorPos(x, y);
+        if (socket.participant) {
+            socket.participant.cursorPos.x = msg.x;
+            socket.participant.cursorPos.x = msg.y;
+        }
         socket.gateway.hasCursorMoved = true;
     }
 };

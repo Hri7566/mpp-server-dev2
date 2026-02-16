@@ -3,7 +3,7 @@ import { Tag } from "./types";
 import { User } from "@prisma/client";
 import { readUser, updateUser } from "~/data/user";
 import { ChannelList } from "~/channel/ChannelList";
-import { bus } from "~/event/bus";
+import { bus } from "~/events/bus";
 
 export const builtinTags = ConfigManager.loadConfig<Record<string, Tag>>(
     "config/tags.yml",

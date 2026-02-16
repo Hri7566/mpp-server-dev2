@@ -1,8 +1,6 @@
-import { ChannelList } from "~/channel/ChannelList";
-import { readUser, updateUser } from "~/data/user";
+import { readUser } from "~/data/user";
 import { removeTag } from "~/util/tags";
 import { ServerEventListener } from "~/util/types";
-import { findSocketsByUserID } from "~/ws/Socket";
 
 export const remove_tag: ServerEventListener<"remove_tag"> = {
     id: "remove_tag",

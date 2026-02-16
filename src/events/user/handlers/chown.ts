@@ -8,26 +8,26 @@ export const chown: ServerEventListener<"chown"> = {
     id: "chown",
     callback: async (msg, socket) => {
         // Change channel ownership
-        if (socket.rateLimits)
-            if (!socket.rateLimits.normal["chown"].attempt()) return;
+        if (!socket.participant) return;
+        if (!socket.participant.loaded) return;
 
-        const ch = socket.getCurrentChannel();
+        const ch = socket.participant.channel;
         if (!ch) return;
 
         let force = false;
 
         if (!ch.crown) {
-            const flags = socket.getUserFlags();
+            const flags = socket.participant.user.flags;
 
             // doesn't have permission or chowning flag
             if (
-                (await socket.hasPermission("chownAnywhere")) ||
+                //(await socket.hasPermission("chownAnywhere")) ||
                 flags?.cansetcrowns === 1
             ) {
                 force = true;
             }
         } else {
-            if (!ch.crown.canBeSetBy(socket)) return;
+            if (!ch.crown.canBeSetBy(socket.participant)) return;
         }
 
         // This user may not always exist,

@@ -1,4 +1,5 @@
 import type { ServerEventListener } from "~/util/types";
+import { setupEvents } from "./events";
 
 export class EventGroup {
     public eventList = new Array<ServerEventListener<any>>();
@@ -19,4 +20,4 @@ export class EventGroup {
 
 export const eventGroups = new Array<EventGroup>();
 
-require("./events.inc");
+setupEvents();

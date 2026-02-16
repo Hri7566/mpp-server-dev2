@@ -1,6 +1,9 @@
 import EventEmitter from "events";
+import { Logger } from "~/util/Logger";
 
 class EventBus extends EventEmitter {
+    public logger = new Logger("Event Bus");
+
     constructor() {
         super();
     }

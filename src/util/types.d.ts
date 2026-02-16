@@ -32,19 +32,19 @@ type TChannelFlags = Partial<{
     player_colors: boolean;
 }>;
 
-declare interface Tag {
+declare interface ITag {
     text: string;
     color: string;
 }
 
-declare interface User {
+declare interface IUser {
     _id: string; // user id
     name: string;
     color: string;
-    tag?: Tag;
+    tag?: ITag;
 }
 
-declare interface IParticipant extends User {
+declare interface IParticipant extends IUser {
     id: string; // participant id (same as user id on mppclone)
 }
 
@@ -111,7 +111,7 @@ declare interface Crown {
     endPos: Vector2;
 }
 
-declare interface IncomingSocketEvents {
+declare interface SocketMessages {
     hi: {
         m: "hi";
         token?: string;
@@ -131,7 +131,7 @@ declare interface IncomingSocketEvents {
     ch: {
         m: "ch";
         _id: string;
-        set: IChannelSettings;
+        set: Partial<IChannelSettings>;
     };
 
     chown: {
@@ -141,7 +141,7 @@ declare interface IncomingSocketEvents {
 
     chset: {
         m: "chset";
-        set: IChannelSettings;
+        set: Partial<IChannelSettings>;
     };
 
     custom: {
@@ -213,7 +213,7 @@ declare interface IncomingSocketEvents {
     "admin message": {
         m: "admin message";
         password: string;
-        msg: IncomingSocketEvents[keyof IncomingSocketEvents];
+        msg: SocketMessages[keyof SocketMessages];
     };
 
     b: {
@@ -335,7 +335,7 @@ declare interface IncomingSocketEvents {
     };
 }
 
-declare interface OutgoingSocketEvents {
+declare interface SocketEvents {
     a: {
         m: "a";
         a: string;
@@ -350,7 +350,7 @@ declare interface OutgoingSocketEvents {
 
     c: {
         m: "c";
-        c: IncomingMPPEvents["a"][];
+        c: SocketEvents["a"][];
     };
 
     ch: {
@@ -369,7 +369,7 @@ declare interface OutgoingSocketEvents {
     hi: {
         m: "hi";
         t: number;
-        u: User;
+        u: IUser;
         permissions: unknown;
         token?: string;
         accountInfo: unknown;
@@ -432,11 +432,11 @@ declare interface OutgoingSocketEvents {
     };
 }
 
-type EventID = IncomingSocketEvents[keyof IncomingSocketEvents]["m"];
+type EventID = SocketMessages[keyof SocketMessages]["m"];
 
 declare type ServerEventListener<E extends EventID> = {
     id: E;
-    callback: (msg: IncomingSocketEvents[E], socket: Socket) => Promise<void>;
+    callback: (msg: SocketMessages[E], socket: Socket) => Promise<void>;
 };
 
 declare type Vector2<T = number> = {

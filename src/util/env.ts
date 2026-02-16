@@ -1,6 +1,6 @@
 import { createEnv } from "@t3-oss/env-core";
 import { z } from "zod";
-import { config } from "~/ws/usersConfig";
+import { config as partConfig } from "~/participant/config";
 
 // Best way to do env ever
 export const env = createEnv({
@@ -10,7 +10,7 @@ export const env = createEnv({
         SALT: z.string().min(10),
         ADMIN_PASS: z.string(),
         COLOR_SALT:
-            config.colorGeneration == "mpp"
+            partConfig.colorGeneration == "mpp"
                 ? z.string().min(10)
                 : z.string().optional()
     },

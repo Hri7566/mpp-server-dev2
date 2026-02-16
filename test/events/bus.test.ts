@@ -1,5 +1,5 @@
 import { test, expect } from "bun:test";
-import { bus } from "~/event/bus";
+import { bus } from "~/events/bus";
 
 test("Event bus", () => {
     let hasReceivedEvent = false;

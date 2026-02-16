@@ -1,4 +1,4 @@
-import { bus } from "~/event/bus";
+import { bus } from "~/events/bus";
 import type { ServerEventListener } from "~/util/types";
 
 export const custom: ServerEventListener<"custom"> = {

@@ -1,10 +1,11 @@
-import { IParticipant, Vector2 } from "~/util/types";
+import type { Participant } from "~/participant";
+import { IUser, Vector2 } from "~/util/types";
 import { Socket } from "~/ws/Socket";
 
 // shiny hat
 export class Crown {
-    public userId: string | undefined;
-    public participantId: string | undefined;
+    public userId: IUser["_id"] | undefined;
+    public participantId: Participant["id"] | undefined;
     public time: number = Date.now();
 
     public startPos: Vector2 = {
@@ -17,20 +18,17 @@ export class Crown {
         y: 50
     };
 
-    public canBeSetBy(socket: Socket) {
+    public canBeSetBy(part: Participant) {
         // This code is based on Brandon's crown code
 
         // can claim, drop, or give if...
-        const flags = socket.getUserFlags();
+        const flags = part.user.flags;
 
         if (!flags) return false;
         if (flags.cansetcrowns) return true;
 
-        const channel = socket.getCurrentChannel();
+        const channel = part.channel;
         if (!channel) return false;
-
-        const part = socket.getParticipant();
-        if (!part) return false;
 
         if (!channel.getSetting("lobby")) {
             // if there is no user (never been owned)

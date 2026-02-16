@@ -1,7 +1,7 @@
 import { ChannelList } from "~/channel/ChannelList";
 import { bus } from "./bus";
-import type { OutgoingSocketEvents, IncomingSocketEvents } from "~/util/types";
-import { socketsByUUID, type Socket } from "~/ws/Socket";
+import type { SocketEvents, SocketMessages } from "~/util/types";
+import { Socket } from "~/ws/Socket";
 import { Logger } from "~/util/Logger";
 
 const logger = new Logger("Event Bus");
@@ -15,7 +15,8 @@ export function loadBehaviors() {
 
     bus.on("ls", () => {});
 
-    bus.on("custom", (msg: IncomingSocketEvents["custom"], sender: Socket) => {
+    /*
+    bus.on("custom", (msg: SocketMessages["custom"], sender: Socket) => {
         if (typeof msg !== "object") return;
         if (typeof msg.data === "undefined") return;
         if (typeof msg.target !== "object") return;
@@ -58,7 +59,7 @@ export function loadBehaviors() {
                             m: "custom",
                             data: msg.data,
                             p: sender.getUserID()
-                        } as OutgoingSocketEvents["custom"]
+                        } as SocketEvents["custom"]
                     ]);
                 }
             } else if (msg.target.mode === "ids") {
@@ -71,7 +72,7 @@ export function loadBehaviors() {
                             m: "custom",
                             data: msg.data,
                             p: sender.getUserID()
-                        } as OutgoingSocketEvents["custom"]
+                        } as SocketEvents["custom"]
                     ]);
                 }
             } else if (msg.target.mode === "subscribed") {
@@ -80,11 +81,12 @@ export function loadBehaviors() {
                         m: "custom",
                         data: msg.data,
                         p: sender.getUserID()
-                    } as OutgoingSocketEvents["custom"]
+                    } as SocketEvents["custom"]
                 ]);
             }
         }
     });
+    */
 
     bus.on("user data update", user => {
         for (const ch of ChannelList.getList()) {
@@ -93,6 +95,7 @@ export function loadBehaviors() {
         }
     });
 
+    /*
     bus.on("ban", ban => {
         try {
             if (ban.banType === "user") {
@@ -112,11 +115,12 @@ export function loadBehaviors() {
             logger.warn("Unhandled error in ban event:", err);
         }
     });
+    */
 
     bus.on("ping timeout", () => {
         let now = Date.now();
 
-        for (const socket of socketsByUUID.values()) {
+        for (const socket of Socket.sockets.values()) {
             if (now - 20000 > socket.gateway.lastPing) socket.destroy();
         }
     });

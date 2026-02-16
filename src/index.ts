@@ -18,7 +18,7 @@ import { Logger } from "./util/Logger";
 // docker hates this next one
 import { startReadline } from "./util/readline";
 import { loadDefaultPermissions } from "./data/permissions";
-import { loadBehaviors } from "./event/behaviors";
+import { loadBehaviors } from "./events/behaviors";
 import { startHTTPServer } from "./ws/server";
 
 // wrapper for some reason

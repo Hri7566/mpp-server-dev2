@@ -10,38 +10,44 @@ import { Socket } from "~/ws/Socket";
 
 test("Token read, write, and delete", async () => {
     const socket = new Socket();
-    socket.setUserID("potato");
+    const part = socket.assignParticipant();
 
-    const t = (await createToken(
-        socket.getUserID(),
-        socket.gateway,
-        "jwt"
-    )) as string;
-    expect(t).toBeString();
+    await new Promise((resolve, reject) => {
+        part.once("load", async () => {
+            const t = (await createToken(
+                part.user._id,
+                socket.gateway,
+                "jwt"
+            )) as string;
+            expect(t).toBeString();
 
-    const t2 = (await createToken(
-        socket.getUserID(),
-        socket.gateway,
-        "uuid"
-    )) as string;
-    expect(t2).toBeString();
+            const t2 = (await createToken(
+                part.user._id,
+                socket.gateway,
+                "uuid"
+            )) as string;
+            expect(t2).toBeString();
 
-    const id = await getUserIDFromToken(t);
-    expect(id).toBe(socket.getUserID());
+            const id = await getUserIDFromToken(t);
+            expect(id).toBe(part.user._id);
 
-    const list = (await getTokens(socket.getUserID()))?.map(v => v.token);
-    expect(list).toContain(t);
-    expect(list).toContain(t2);
+            const list = (await getTokens(part.user._id))?.map(v => v.token);
+            expect(list).toContain(t);
+            expect(list).toContain(t2);
 
-    await deleteToken(socket.getUserID(), t);
+            await deleteToken(part.user._id, t);
 
-    const list2 = (await getTokens(socket.getUserID()))?.map(v => v.token);
-    expect(list2).not.toContain(t);
-    expect(list2).toContain(t2);
+            const list2 = (await getTokens(part.user._id))?.map(v => v.token);
+            expect(list2).not.toContain(t);
+            expect(list2).toContain(t2);
 
-    await deleteAllTokens(socket.getUserID());
+            await deleteAllTokens(part.user._id);
 
-    const list3 = (await getTokens(socket.getUserID()))?.map(v => v.token);
-    expect(list3).not.toContain(t);
-    expect(list3).not.toContain(t2);
+            const list3 = (await getTokens(part.user._id))?.map(v => v.token);
+            expect(list3).not.toContain(t);
+            expect(list3).not.toContain(t2);
+
+            resolve(true);
+        });
+    });
 });

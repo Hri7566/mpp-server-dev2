@@ -1,14 +1,14 @@
 import { User } from "@prisma/client";
 import { prisma } from "./prisma";
-import { Tag, UserFlags } from "~/util/types";
-import { config } from "~/ws/usersConfig";
+import { ITag, UserFlags } from "~/util/types";
+import { config as partConfig } from "~/participant/config";
 
 export async function createUser(
     _id: string,
     name?: string,
     color?: string,
     flags?: UserFlags,
-    tag?: Tag
+    tag?: ITag
 ) {
     try {
         return await prisma.user.create({
@@ -25,7 +25,7 @@ export async function createUser(
             id: _id,
             name,
             color,
-            flags: config.defaultFlags,
+            flags: partConfig.defaultFlags,
             tag: {}
         } as User;
     }

@@ -16,12 +16,12 @@ import {
 } from "~/data/permissions";
 import { builtinTags, getTag, removeTag, setTagBuiltin, setTag } from "../tags";
 import logger from "./logger";
-import { socketsByUUID } from "~/ws/Socket";
 import { createColor, createUserIDFromIP } from "../id";
 import { BanManager } from "~/ws/BanManager";
 import { createToken, deleteAllTokens, getTokens } from "../token";
 import { Gateway } from "~/ws/Gateway";
-import { config as usersConfig } from "~/ws/usersConfig";
+import { config as partConfig } from "~/participant/config";
+import Socket from "~/ws/Socket";
 
 Command.addCommand(
     new Command(["help", "h", "commands", "cmds"], "help", msg => {
@@ -100,26 +100,24 @@ Command.addCommand(
 
                     return "Users: " + user.count + users;
                 } else if (msg.args[1] == "sockets") {
-                    const sockets = [...socketsByUUID.values()];
+                    const sockets = [...Socket.sockets.values()];
                     const list = [];
 
                     for (const sock of sockets) {
-                        const part = sock.getParticipant();
+                        const part = sock.participant;
                         if (part) {
-                            let str = `[${sock.getUUID()}] ${part.id} - ${
+                            let str = `[${sock.uuid}] ${part.id} - ${
                                 part.name
                             } (${part.color})${
                                 part.tag ? ` ${JSON.stringify(part.tag)} ` : ""
                             }`;
 
-                            const ch = sock.getCurrentChannel();
+                            const ch = part.channel;
 
                             if (ch) str += ` - ${ch.getID()}`;
                             list.push(str);
                         } else {
-                            list.push(
-                                `[${sock.getUUID()}] (no participant loaded)`
-                            );
+                            list.push(`[${sock.uuid}] (no participant loaded)`);
                         }
                     }
 
@@ -261,6 +259,7 @@ Command.addCommand(
     })
 );
 
+/*
 Command.addCommand(
     new Command(["reload"], "reload [confirm]", async msg => {
         if (!msg.args[1])
@@ -275,7 +274,9 @@ Command.addCommand(
         return "Successfully sent XSS reload notification to all users.";
     })
 );
+*/
 
+/*
 Command.addCommand(
     new Command(
         ["announce", "announcement"],
@@ -298,6 +299,7 @@ Command.addCommand(
         }
     )
 );
+*/
 
 Command.addCommand(
     new Command(
@@ -437,9 +439,9 @@ Command.addCommand(
 
         if (!_id) return `Usage: ip <userId>`;
 
-        for (const socket of socketsByUUID.values()) {
-            if (socket.getUserID() === _id)
-                return "Found IP for online user: " + socket.getIP();
+        for (const socket of Socket.sockets.values()) {
+            if (socket.participant?.user._id === _id)
+                return "Found IP for online user: " + socket.ip;
         }
 
         return "No user found (IPs are not saved, they have to be online)";
@@ -480,7 +482,7 @@ Command.addCommand(
             id,
             undefined,
             color,
-            usersConfig.defaultFlags,
+            partConfig.defaultFlags,
             builtinTags.bot
         );
 

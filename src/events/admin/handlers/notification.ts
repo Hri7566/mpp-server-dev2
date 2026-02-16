@@ -1,7 +1,7 @@
 import { notificationConfig as config } from "~/util/notificationConfig";
 import { ChannelList } from "~/channel/ChannelList";
 import { ServerEventListener } from "~/util/types";
-import { socketsByUUID } from "~/ws/Socket";
+import { Socket } from "~/ws/Socket";
 
 export const notification: ServerEventListener<"notification"> = {
     id: "notification",
@@ -40,7 +40,7 @@ export const notification: ServerEventListener<"notification"> = {
         }
 
         if (typeof msg.targetUser !== "undefined") {
-            for (const socket of socketsByUUID.values()) {
+            for (const socket of Socket.sockets.values()) {
                 if (socket.getUserID() == msg.targetUser) {
                     socket.sendNotification(msg);
                 }
