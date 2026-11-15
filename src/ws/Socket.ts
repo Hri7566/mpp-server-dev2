@@ -34,7 +34,9 @@ import { NoteQuota } from "./ratelimit/NoteQuota";
 import { notificationConfig } from "~/util/notificationConfig";
 import { formatMillisecondsRemaining } from "~/util/helpers";
 import { getUserPermissions, validatePermission } from "~/data/permissions";
+import { hasCachedRole, ROLE_BLACK_MIDI } from "~/data/role";
 import { flushUser } from "~/participant/userSaves";
+import { BASIC_CHALLENGE_CODE } from "~/util/browserChallenge";
 
 const logger = new Logger("Sockets");
 
@@ -45,6 +47,28 @@ const logger = new Logger("Sockets");
  **/
 export class Socket extends EventEmitter {
     public static sockets = new Map<Socket["uuid"], Socket>();
+
+    /** How often note quotas refill (same as the client) */
+    public static NOTE_QUOTA_TICK_MS = 2000;
+
+    private static noteQuotaTimer?: Timer;
+
+    /**
+     * Refill every socket's note quota on a timer. Without this, a quota
+     * that was spent never came back and notes were silently dropped.
+     */
+    private static startNoteQuotaTimer() {
+        if (Socket.noteQuotaTimer) return;
+
+        Socket.noteQuotaTimer = setInterval(() => {
+            for (const socket of Socket.sockets.values()) {
+                socket.noteQuota.tick();
+            }
+        }, Socket.NOTE_QUOTA_TICK_MS);
+
+        // Don't keep the process alive just for this
+        Socket.noteQuotaTimer.unref?.();
+    }
 
     /**
      * Find a socket by their IP
@@ -83,6 +107,7 @@ export class Socket extends EventEmitter {
         super();
 
         Socket.sockets.set(this.uuid, this);
+        Socket.startNoteQuotaTimer();
 
         // real user?
         if (ws) {
@@ -105,7 +130,7 @@ export class Socket extends EventEmitter {
             this.sendArray([
                 {
                     m: "b",
-                    code: "~return btoa(JSON.stringify([true, navigator.userAgent]));"
+                    code: BASIC_CHALLENGE_CODE
                 }
             ]);
         } else if (config.browserChallenge === "obf") {
@@ -433,6 +458,14 @@ export class Socket extends EventEmitter {
             tier = "normal";
             limits = userLimits;
             quota = NoteQuota.PARAMS_NORMAL;
+        }
+
+        // blackMidi role: bigger note quota on top of their normal limits
+        // (admins already have a bigger one)
+        const _id = this.getUserID();
+        if (tier !== "admin" && _id && hasCachedRole(_id, ROLE_BLACK_MIDI)) {
+            tier += "+blackMidi";
+            quota = NoteQuota.PARAMS_BLACK_MIDI;
         }
 
         // Don't reset buckets (or spam nq) if nothing changed
