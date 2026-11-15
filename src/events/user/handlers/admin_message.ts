@@ -31,6 +31,9 @@ export const admin_message: ServerEventListener<"admin message"> = {
             }
         }
 
+        if (typeof msg.msg !== "object") return;
+        if (Array.isArray(msg.msg)) return;
+
         // Probably shouldn't be using password auth in 2024
         // Maybe I'll setup a dashboard instead some day
         socket.admin.emit(msg.msg.m, msg.msg, socket, true);
