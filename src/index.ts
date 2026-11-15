@@ -24,6 +24,17 @@ import { startHTTPServer } from "./ws/server";
 // wrapper for some reason
 export function startServer() {
     const logger = new Logger("Main");
+
+    // Last line of defense: Bun exits on these by default,
+    // which lets a single bad message take the whole server down
+    process.on("unhandledRejection", reason => {
+        logger.error("Unhandled promise rejection:", reason);
+    });
+
+    process.on("uncaughtException", err => {
+        logger.error("Uncaught exception:", err);
+    });
+
     logger.info("Forceloading startup channels...");
     loadForcedStartupChannels();
     logger.info("Finished forceloading");
