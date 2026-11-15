@@ -21,7 +21,10 @@ export function startReadline() {
         rl.prompt();
     });
 
-    rl.on("SIGINT", () => {
+    rl.on("SIGINT", async () => {
+        // Save unsaved name/color changes before exiting
+        const { flushAllUsers } = await import("~/participant/userSaves");
+        await flushAllUsers().catch(() => {});
         process.exit();
     });
 

@@ -13,7 +13,8 @@ export class RateLimitChain {
             if (this.chain[i].attempt(time)) return true;
         }
 
-        return true;
+        // Every slot in the chain is used up
+        return false;
     }
 
     public setNumAndInterval(num: number, interval_ms: number) {

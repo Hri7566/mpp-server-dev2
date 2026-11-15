@@ -1,0 +1,44 @@
+# Server networking config file
+
+# Reverse proxy (nginx) settings
+proxy:
+    # Whether to read the client's IP from a header set by a reverse proxy.
+    # If false, the IP of whoever connected to the server is used.
+    # WARNING: If this is enabled and the server is public and not behind a
+    # proxy, anyone can use the header below to change their IP! This is a
+    # serious vulnerability if you leave it open! Anyone can spam the server
+    # and potentially run your bills up.
+    enabled: true
+
+    # Header the proxy puts the client IP in.
+    # For nginx, "x-forwarded-for" works with:
+    #     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    header: x-forwarded-for
+
+    # The header is only believed when the connection comes from one of these.
+    # Anyone else could send a fake header and pretend to be any IP (and therefore any user).
+    # Accepts exact IPs and IPv4 CIDR ranges.
+    # If nginx reaches the server through Docker's port forwarding, the connection
+    # comes from the Docker bridge instead of localhost, so add its range, e.g. 172.16.0.0/12,
+    # and make sure the published port isn't reachable from the internet ("127.0.0.1:8443:8443").
+    trustedProxies:
+        - 127.0.0.1
+        - ::1
+
+# HTTPS/WSS settings (changes need a restart)
+ssl:
+    # Whether to serve over TLS directly instead of plain HTTP/WS.
+    # Leave this off if nginx handles SSL for you.
+    enabled: false
+
+    # Path to the PEM certificate (full chain)
+    cert: ""
+
+    # Path to the PEM private key
+    key: ""
+
+    # Optional path to a CA bundle
+    ca: ""
+
+    # Optional passphrase for the private key
+    passphrase: ""

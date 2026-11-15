@@ -6,6 +6,7 @@ node_modules
 
 # SQLite databases
 prisma/*.sqlite
+prisma/*.sqlite-journal
 
 # Build script output
 /dist

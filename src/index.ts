@@ -20,6 +20,18 @@ import { startReadline } from "./util/readline";
 import { loadDefaultPermissions } from "./data/permissions";
 import { loadBehaviors } from "./events/behaviors";
 import { startHTTPServer } from "./ws/server";
+import { flushAllUsers, startUserSaveTimer } from "./participant/userSaves";
+
+/**
+ * Save unsaved user changes, then exit
+ */
+export async function shutdown(code = 0) {
+    try {
+        await flushAllUsers();
+    } finally {
+        process.exit(code);
+    }
+}
 
 // wrapper for some reason
 export function startServer() {
@@ -34,6 +46,15 @@ export function startServer() {
     process.on("uncaughtException", err => {
         logger.error("Uncaught exception:", err);
     });
+
+    // Save name/color changes before stopping (e.g. docker stop)
+    process.on("SIGTERM", () => {
+        logger.info("Received SIGTERM, saving users and exiting");
+        shutdown();
+    });
+
+    // Name/color changes are saved on socket close and every 30 minutes
+    startUserSaveTimer();
 
     logger.info("Forceloading startup channels...");
     loadForcedStartupChannels();

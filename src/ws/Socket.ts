@@ -34,6 +34,7 @@ import { NoteQuota } from "./ratelimit/NoteQuota";
 import { notificationConfig } from "~/util/notificationConfig";
 import { formatMillisecondsRemaining } from "~/util/helpers";
 import { getUserPermissions, validatePermission } from "~/data/permissions";
+import { flushUser } from "~/participant/userSaves";
 
 const logger = new Logger("Sockets");
 
@@ -178,6 +179,8 @@ export class Socket extends EventEmitter {
         if (this.destroyed) return;
         this.destroyed = true;
 
+        const _id = this.getUserID();
+
         // Socket was closed or should be closed, clear data
         ChannelList.unsubscribe(this);
         if (this.participant) this.participant.removeSocket(this);
@@ -189,6 +192,9 @@ export class Socket extends EventEmitter {
         } catch (err) {
             logger.warn("Problem closing socket:", err);
         }
+
+        // Save any name/color changes they made (errors are handled inside)
+        if (_id) flushUser(_id);
     }
 
     /**
@@ -233,7 +239,17 @@ export class Socket extends EventEmitter {
     public async assignParticipant() {
         if (!this.participant) new Participant(this);
         const part = this.participant as unknown as Participant;
-        await part.loadUser();
+
+        if (!this.isDestroyed()) await part.loadUser();
+
+        // The socket may have closed before or during loading (e.g. while
+        // hi was looking up tokens). destroy() already ran, so nothing else
+        // will clean this participant up; don't leave it behind.
+        if (this.isDestroyed()) {
+            part.removeSocket(this);
+            return part;
+        }
+
         this.resetRateLimits();
         return part;
     }
@@ -291,9 +307,25 @@ export class Socket extends EventEmitter {
                 return;
             }
 
-            // Is this a full lobby?
-            if (!ch.hasUser(part.user._id) && ch.isFull() && ch.isTrueLobby()) {
-                return this.setChannel(ch.getNextLobbyID());
+            // Is this channel full? (other tabs of ours don't take up a spot)
+            if (!ch.hasUser(part.user._id) && ch.isFull()) {
+                // Full lobbies overflow into the next one
+                if (ch.isTrueLobby()) {
+                    return this.setChannel(ch.getNextLobbyID());
+                }
+
+                if (!ch.canBypassLimit(part)) {
+                    this.sendNotification({
+                        class: "short",
+                        duration: 7000,
+                        target: "#room",
+                        text: `"${ch.getID()}" is full.`
+                    });
+
+                    if (desiredID !== channelConfig.fullChannel)
+                        return this.setChannel(channelConfig.fullChannel);
+                    return;
+                }
             }
         }
 

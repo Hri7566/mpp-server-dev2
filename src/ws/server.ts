@@ -11,6 +11,8 @@ import type { Server, ServerWebSocket } from "bun";
 import { ConfigManager } from "~/util/config";
 import { usersConfigPath } from "../participant/config";
 import { ChannelList } from "~/channel/ChannelList";
+import { config as serverConfig } from "./config";
+import { getClientIP, isTrustedProxy } from "~/util/ip";
 
 const logger = new Logger("WebSocket Server");
 
@@ -36,7 +38,7 @@ export const frontendConfig = ConfigManager.loadConfig<IFrontendConfig>(
     {
         topButtons: "git-links",
         disableChat: false,
-        winter: false,
+        winter: true,
         enableSlide: false,
         createdRoomSocialLinks: false,
         playingAloneSocialLinks: false,
@@ -91,17 +93,86 @@ async function getIndex(path?: string, userID?: string) {
 
 type ServerWebSocketMPP = ServerWebSocket<{ ip: string; socket: Socket }>;
 
+// Peers we've already warned about sending a forwarded header untrusted
+const warnedPeers = new Set<string>();
+
+/**
+ * Work out the client IP for a request, honoring the proxy config
+ * @param req Incoming request
+ * @param peerIP IP of whoever opened the connection
+ */
+function resolveIP(req: Request, peerIP: string) {
+    const proxy = serverConfig.proxy;
+    if (!proxy.enabled) return peerIP;
+
+    const header = req.headers.get(proxy.header);
+    const trusted = Array.isArray(proxy.trustedProxies)
+        ? proxy.trustedProxies
+        : [];
+
+    if (
+        header &&
+        !isTrustedProxy(peerIP, trusted) &&
+        !warnedPeers.has(peerIP) &&
+        warnedPeers.size < 1000
+    ) {
+        warnedPeers.add(peerIP);
+        logger.warn(
+            `Ignoring ${proxy.header} header from untrusted peer ${peerIP}`,
+            "(add it to proxy.trustedProxies in config/server.yml if it's your proxy)"
+        );
+    }
+
+    return getClientIP(peerIP, header, trusted);
+}
+
+/**
+ * Build Bun's TLS options from the SSL config
+ * @returns TLS options, or undefined if SSL is off
+ */
+function getTLSOptions() {
+    const ssl = serverConfig.ssl;
+    if (!ssl.enabled) return undefined;
+
+    for (const [name, file] of [
+        ["cert", ssl.cert],
+        ["key", ssl.key]
+    ]) {
+        if (typeof file !== "string" || !fs.existsSync(file)) {
+            throw new Error(
+                `SSL is enabled but ssl.${name} file "${file}" doesn't exist (config/server.yml)`
+            );
+        }
+    }
+
+    if (ssl.ca && !fs.existsSync(ssl.ca)) {
+        throw new Error(
+            `ssl.ca file "${ssl.ca}" doesn't exist (config/server.yml)`
+        );
+    }
+
+    return {
+        cert: Bun.file(ssl.cert),
+        key: Bun.file(ssl.key),
+        ca: ssl.ca ? Bun.file(ssl.ca) : undefined,
+        passphrase: ssl.passphrase || undefined
+    };
+}
+
 export let app: Server<ServerWebSocketMPP["data"]>;
 
 export function startHTTPServer() {
+    const tls = getTLSOptions();
+
     app = Bun.serve<{ ip: string }>({
         port: env.PORT,
         hostname: "0.0.0.0",
+        tls,
         fetch: (req, server) => {
             const reqip = server.requestIP(req);
             if (!reqip) return;
 
-            const ip = req.headers.get("x-forwarded-for") || reqip.address;
+            const ip = resolveIP(req, reqip.address);
 
             // Upgrade websocket connections
             if (server.upgrade(req, { data: { ip } })) {
@@ -207,5 +278,8 @@ export function startHTTPServer() {
         }
     });
 
-    logger.info("Listening on port", env.PORT);
+    logger.info(
+        `Listening on port ${env.PORT}`,
+        tls ? "(HTTPS/WSS)" : "(HTTP/WS)"
+    );
 }

@@ -51,14 +51,14 @@ export class Logger {
                 unimportant(this.getHHMMSSMS()),
                 ...args
             );
-        } catch (err) {}
+        } catch (err) { }
 
         // Re-print the readline prompt (spooky cringe global variable)
         // prompt() throws if readline was closed (e.g. stdin is /dev/null)
         try {
             const rl = (globalThis as unknown as any).rl;
             if (rl && !rl.closed) rl.prompt();
-        } catch (err) {}
+        } catch (err) { }
 
         // Emit the log event for remote consoles
         try {
@@ -69,7 +69,7 @@ export class Logger {
                 unimportant(this.getHHMMSSMS()),
                 args
             );
-        } catch (err) {}
+        } catch (err) { }
 
         // Write to file
         try {
@@ -90,7 +90,7 @@ export class Logger {
                     if (err) console.error(err);
                 });
             }
-        } catch (err) {}
+        } catch (err) { }
     }
 
     /**
@@ -135,8 +135,8 @@ export class Logger {
         Logger.log(
             "log",
             this.logPath,
-            `[${this.id}]`,
             `\x1b[34m[info]\x1b[0m`,
+            `[${this.id}]`,
             ...args
         );
     }
@@ -149,8 +149,8 @@ export class Logger {
         Logger.log(
             "error",
             this.logPath,
-            `[${this.id}]`,
             `\x1b[31m[error]\x1b[0m`,
+            `[${this.id}]`,
             ...args
         );
     }
@@ -163,8 +163,8 @@ export class Logger {
         Logger.log(
             "warn",
             this.logPath,
-            `[${this.id}]`,
             `\x1b[33m[warn]\x1b[0m`,
+            `[${this.id}]`,
             ...args
         );
     }
@@ -177,8 +177,8 @@ export class Logger {
         Logger.log(
             "debug",
             this.logPath,
-            `[${this.id}]`,
             `\x1b[32m[debug]\x1b[0m`,
+            `[${this.id}]`,
             ...args
         );
     }

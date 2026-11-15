@@ -61,7 +61,10 @@ Command.addCommand(
 );
 
 Command.addCommand(
-    new Command(["stop", "exit"], "stop", msg => {
+    new Command(["stop", "exit"], "stop", async msg => {
+        // Save unsaved name/color changes before exiting
+        const { flushAllUsers } = await import("~/participant/userSaves");
+        await flushAllUsers().catch(() => {});
         process.exit();
     })
 );
