@@ -1,16 +1,22 @@
 import { describe, expect, test } from "bun:test";
 import {
     BASIC_CHALLENGE_CODE,
+    BOT_USER_AGENT,
     checkBasicChallenge,
     decodeChallengeAnswer
 } from "~/util/browserChallenge";
 import { Socket } from "~/ws/Socket";
 import { catchUnhandled } from "../helpers";
 
-/** Run the challenge code the way Client.js does, with a given user agent */
-function solve(userAgent: string) {
+/** Run the challenge code the way Client.js does, with a given navigator */
+function solveWith(navigator: unknown) {
     const body = BASIC_CHALLENGE_CODE.substring(1); // strip the "~"
-    return new Function("navigator", body)({ userAgent }) as string;
+    return new Function("navigator", body)(navigator) as string;
+}
+
+/** Run the challenge code with a given user agent */
+function solve(userAgent: string) {
+    return solveWith({ userAgent });
 }
 
 function answer(code: string) {
@@ -77,6 +83,24 @@ describe("basic browser challenge", () => {
             for (const code of bad) {
                 expect(answer(code).hasCompletedBrowserChallenge).toBe(false);
             }
+        });
+
+        expect(errors).toHaveLength(0);
+    });
+
+    test('clients without navigator.userAgent answer "bot"', () => {
+        expect(solveWith(undefined)).toBe("bot"); // e.g. Node, no navigator
+        expect(solveWith(null)).toBe("bot");
+        expect(solveWith({})).toBe("bot"); // navigator but no userAgent
+        expect(solveWith({ userAgent: "" })).toBe("bot");
+        expect(solveWith({ userAgent: 42 })).toBe("bot");
+    });
+
+    test('a "bot" answer fails the challenge without throwing', async () => {
+        const errors = await catchUnhandled(() => {
+            const gateway = answer(solveWith(undefined));
+            expect(gateway.hasCompletedBrowserChallenge).toBe(false);
+            expect(gateway.userAgent).toBe(BOT_USER_AGENT);
         });
 
         expect(errors).toHaveLength(0);
