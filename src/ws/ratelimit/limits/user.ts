@@ -42,7 +42,7 @@ export const userLimits: RateLimitConstructorList = {
         custom: () =>
             new RateLimitChain(
                 config.user.chains.custom.num,
-                config.user.chains.custom.num
+                config.user.chains.custom.interval
             )
     }
 };

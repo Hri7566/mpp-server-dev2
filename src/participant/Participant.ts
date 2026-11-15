@@ -253,6 +253,9 @@ export class Participant extends EventEmitter {
     }
 
     public async userset(name?: string, color?: string, force = false) {
+        // User ID isn't known until the user has loaded
+        if (!this.loaded || !this.user._id) return;
+
         if (typeof name !== "undefined") {
             if (typeof name !== "string") return;
             if (name.length > 40) return;

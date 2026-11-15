@@ -6,6 +6,7 @@ export const custom: ServerEventListener<"custom"> = {
     callback: async (msg, socket) => {
         // Custom message
         if (!socket.isCustomSubbed()) return;
+        if (!socket.rateLimits.chains.custom.attempt()) return;
 
         bus.emit("custom", msg, socket);
     }
