@@ -27,10 +27,19 @@ const BROKEN_CODE = "broken";
 const BOT_CODE = "bot";
 
 /**
- * Stored as the gateway's user agent for clients that answered "bot".
- * Participants with such a socket show a temporary BOT tag.
+ * Stored as the gateway's user agent for clients that answered "bot" or
+ * "broken". They're let in, but participants with such a socket show a
+ * temporary BOT tag.
  */
 export const BOT_USER_AGENT = "bot";
+
+/**
+ * Whether a socket identified itself as a bot (answered "bot" or "broken")
+ * @param socket Socket to check
+ */
+export function isBotClient(socket: Socket) {
+    return socket.gateway.userAgent === BOT_USER_AGENT;
+}
 
 export function checkChallenge(socket: Socket, code?: string) {
     if (partConfig.browserChallenge === "none")
@@ -63,20 +72,13 @@ export function decodeChallengeAnswer(code: string) {
 export function checkBasicChallenge(socket: Socket, code?: string) {
     if (typeof code !== "string") return;
 
-    if (code === BOT_CODE) {
-        // Not a browser (no navigator.userAgent), so it fails the challenge.
-        // Remember it, so authorized bots get a temporary BOT tag.
+    if (code === BOT_CODE || code === BROKEN_CODE) {
+        // Not a browser: no navigator.userAgent ("bot"), or the challenge
+        // code threw ("broken"). They aren't disconnected; they're marked
+        // as bots and get a temporary BOT tag instead.
         socket.gateway.userAgent = BOT_USER_AGENT;
-        logger.warn(
-            `Client ${socket.ip} has no user agent, treating it as a bot`
-        );
-        return;
-    }
-
-    if (code === BROKEN_CODE) {
-        // The challenge code threw on the client (no navigator, blocked eval...)
-        logger.warn(
-            `Client ${socket.ip} couldn't run the browser challenge (sent "broken")`
+        logger.info(
+            `Client ${socket.ip} sent "${code}", treating it as a bot`
         );
         return;
     }

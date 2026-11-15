@@ -1,6 +1,6 @@
 import { getUserPermissions } from "~/data/permissions";
 import { hasRole } from "~/data/role";
-import { checkChallenge } from "~/util/browserChallenge";
+import { checkChallenge, isBotClient } from "~/util/browserChallenge";
 import { Logger } from "~/util/Logger";
 import { getMOTD } from "~/util/motd";
 import { createToken, getTokens, getUserIDFromToken } from "~/util/token";
@@ -66,9 +66,12 @@ export const hi: ServerEventListener<"hi"> = {
         const part = await socket.assignParticipant();
         if (socket.isDestroyed()) return;
 
+        // Clients that said they're bots ("bot"/"broken") are let in with a
+        // temporary BOT tag; anything else that failed needs the bot role
         if (
             config.browserChallenge !== "none" &&
             !socket.gateway.hasCompletedBrowserChallenge &&
+            !isBotClient(socket) &&
             !(await hasRole(part.user._id, "bot"))
         ) {
             socket.sendDisconnectNotification(
