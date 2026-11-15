@@ -3,13 +3,13 @@ import { createSocketID, createUserIDFromIP } from "../util/id";
 import fs from "node:fs";
 import path from "node:path";
 import { handleMessage } from "./message";
-import { Socket, socketsByUUID } from "./Socket";
+import { Socket } from "./Socket";
 import env from "~/util/env";
 import { getMOTD } from "~/util/motd";
 import nunjucks from "nunjucks";
 import type { Server, ServerWebSocket } from "bun";
 import { ConfigManager } from "~/util/config";
-import { usersConfigPath } from "./usersConfig";
+import { usersConfigPath } from "../participant/config";
 import { ChannelList } from "~/channel/ChannelList";
 
 const logger = new Logger("WebSocket Server");
@@ -91,7 +91,7 @@ async function getIndex(path?: string, userID?: string) {
 
 type ServerWebSocketMPP = ServerWebSocket<{ ip: string; socket: Socket }>;
 
-export let app: Server;
+export let app: Server<ServerWebSocketMPP["data"]>;
 
 export function startHTTPServer() {
     app = Bun.serve<{ ip: string }>({
@@ -155,25 +155,19 @@ export function startHTTPServer() {
         websocket: {
             open: (ws: ServerWebSocketMPP) => {
                 // swimming in the pool
-                const socket = new Socket(ws, createSocketID());
-
+                const socket = new Socket(ws);
                 ws.data.socket = socket;
-                // logger.debug("Connection at " + socket.getIP());
 
-                if (socket.socketID === undefined) {
-                    socket.socketID = createSocketID();
-                }
-
-                socketsByUUID.set(socket.getUUID(), socket);
-
-                const ip = socket.getIP();
+                const ip = socket.ip;
 
                 if (httpIpCache.has(ip)) {
+                    // check web page fetch time
                     const date = httpIpCache.get(ip);
 
                     if (date) {
                         if (Date.now() - date < 1000 * 60) {
                             // They got the page and we were connected in under a minute
+                            // spooky gateway
                             socket.gateway.hasConnectedToHTTPServer = true;
                         } else {
                             // They got the page and a long time has passed
@@ -201,11 +195,11 @@ export function startHTTPServer() {
                 if (socket) {
                     socket.destroy();
 
-                    for (const sockID of socketsByUUID.keys()) {
-                        const sock = socketsByUUID.get(sockID);
+                    for (const sockID of Socket.sockets.keys()) {
+                        const sock = Socket.sockets.get(sockID);
 
                         if (sock === socket) {
-                            socketsByUUID.delete(sockID);
+                            Socket.sockets.delete(sockID);
                         }
                     }
                 }

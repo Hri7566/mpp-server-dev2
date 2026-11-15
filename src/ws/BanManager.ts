@@ -1,6 +1,6 @@
 import { Ban } from "@prisma/client";
 import { createBan, readSocketBans, readUserBans } from "~/data/ban";
-import { bus } from "~/event/bus";
+import { bus } from "~/events/bus";
 import { Logger } from "~/util/Logger";
 
 const logger = new Logger("Ban Manager");

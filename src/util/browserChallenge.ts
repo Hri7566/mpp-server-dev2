@@ -1,14 +1,15 @@
 import { Socket } from "~/ws/Socket";
-import { config } from "~/ws/usersConfig";
+import { config as partConfig } from "~/participant/config";
 import { Logger } from "./Logger";
 
 const logger = new Logger("Browser Challenge Handler");
 
 export function checkChallenge(socket: Socket, code?: string) {
-    if (config.browserChallenge === "none")
+    if (partConfig.browserChallenge === "none")
         socket.gateway.hasCompletedBrowserChallenge = true;
-    if (config.browserChallenge === "basic") checkBasicChallenge(socket, code);
-    if (config.browserChallenge === "obf") checkObfChallenge(socket, code);
+    if (partConfig.browserChallenge === "basic")
+        checkBasicChallenge(socket, code);
+    if (partConfig.browserChallenge === "obf") checkObfChallenge(socket, code);
 }
 
 export function checkBasicChallenge(socket: Socket, code?: string) {

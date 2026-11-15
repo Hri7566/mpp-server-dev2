@@ -1,6 +1,6 @@
 import { readFileSync } from "fs";
 import { Gateway } from "~/ws/Gateway";
-import { config } from "~/ws/usersConfig";
+import { config as partConfig } from "~/participant/config";
 import { Logger } from "./Logger";
 import jwt from "jsonwebtoken";
 import crypto from "node:crypto";
@@ -10,7 +10,7 @@ const logger = new Logger("Tokens");
 
 let key: string;
 
-if (config.tokenAuth == "jwt") {
+if (partConfig.tokenAuth == "jwt") {
     // TODO: find a better path for this file
     key = readFileSync("./mppkey").toString();
 }
@@ -24,7 +24,7 @@ if (config.tokenAuth == "jwt") {
 export async function createToken(
     userId: string,
     gateway: Gateway,
-    method = config.tokenAuth
+    method = partConfig.tokenAuth
 ) {
     try {
         let token = "";

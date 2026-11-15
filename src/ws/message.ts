@@ -11,11 +11,14 @@ export function handleMessage(socket: Socket, text: string) {
         const transmission = JSON.parse(text);
 
         if (!Array.isArray(transmission)) {
+            const _id = socket.participant?.user._id;
+
             logger.warn(
                 "Received message that isn't an array! --",
                 transmission,
                 "-- from",
-                socket.getUserID()
+                socket.uuid,
+                `(${_id})`
             );
         } else {
             for (const msg of transmission) {
@@ -25,7 +28,7 @@ export function handleMessage(socket: Socket, text: string) {
             }
         }
     } catch (err) {
-        logger.warn("Unable to decode message from", socket.getIP());
+        logger.warn("Unable to decode message from", socket.ip);
         logger.error(err);
     }
 }

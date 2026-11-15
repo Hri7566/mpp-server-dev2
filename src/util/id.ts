@@ -1,7 +1,7 @@
 import { createHash } from "crypto";
 import env from "./env";
 import { spoop_text } from "./helpers";
-import { config } from "~/ws/usersConfig";
+import { config as partConfig } from "~/participant/config";
 import { Logger } from "./Logger";
 import crypto from "crypto";
 
@@ -36,15 +36,15 @@ export function createID() {
  * @returns User ID
  */
 export function createUserIDFromIP(ip: string) {
-    if (config.idGeneration == "random") {
+    if (partConfig.idGeneration == "random") {
         return createID();
-    } else if (config.idGeneration == "sha256") {
+    } else if (partConfig.idGeneration == "sha256") {
         return createHash("sha256")
             .update(ip)
             .update(env.SALT)
             .digest("hex")
             .substring(0, 24);
-    } else if (config.idGeneration == "mpp") {
+    } else if (partConfig.idGeneration == "mpp") {
         return createHash("md5")
             .update("::ffff:" + ip + env.SALT)
             .digest("hex")
@@ -64,25 +64,25 @@ export function createSocketID() {
 }
 
 /**
- * Generate a user's color based on their user ID
- * @param _id User ID
+ * Generate a user's color based on a static property
+ * @param id User ID/IP
  * @returns Hex color
  */
-export function createColor(_id: string) {
-    if (config.colorGeneration == "random") {
+export function createColor(id: string) {
+    if (partConfig.colorGeneration == "random") {
         return "#" + Math.floor(Math.random() * 16777215).toString(16);
-    } else if (config.colorGeneration == "sha256") {
+    } else if (partConfig.colorGeneration == "sha256") {
         return (
             "#" +
             createHash("sha256")
-                .update(_id)
+                .update(id)
                 .update(env.SALT)
                 .digest("hex")
                 .substring(24, 24 + 6)
         );
-    } else if (config.colorGeneration == "mpp") {
+    } else if (partConfig.colorGeneration == "mpp") {
         const hash = createHash("md5");
-        hash.update(_id + env.COLOR_SALT);
+        hash.update(id + env.COLOR_SALT);
         const output = hash.digest();
 
         let r = output.readUInt8(0);
@@ -113,7 +113,7 @@ export function createColor(_id: string) {
             g.toString(16).padStart(2, "0") +
             b.toString(16).padStart(2, "0")
         );
-    } else if (config.colorGeneration == "white") {
+    } else if (partConfig.colorGeneration == "white") {
         return "#ffffff";
     } else {
         return "#" + Math.floor(Math.random() * 16777215).toString(16);
