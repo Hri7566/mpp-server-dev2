@@ -20,4 +20,5 @@ export class EventGroup {
 
 export const eventGroups = new Array<EventGroup>();
 
-setupEvents();
+// update: async
+await setupEvents();
