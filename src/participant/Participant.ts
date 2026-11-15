@@ -16,6 +16,8 @@ import { config } from "./config";
 import type { Channel } from "~/channel";
 import type { User } from "@prisma/client";
 import { bus } from "~/events/bus";
+import { builtinTags } from "~/util/tags";
+import { BOT_USER_AGENT } from "~/util/browserChallenge";
 import {
     applyPendingUserChange,
     queueUserChange,
@@ -164,20 +166,54 @@ export class Participant extends EventEmitter {
             _id,
             name: this.user.name,
             color: this.user.color,
-            tag: config.enableTags ? this.user.tag : undefined,
+            tag: config.enableTags
+                ? this.user.tag ?? this.temporaryTag
+                : undefined,
             vanished: this.vanished || undefined
         };
     }
 
+    /**
+     * Tag shown while connected, but never saved to the database.
+     * Currently: BOT for anyone connected from a client without a user agent.
+     * A real tag on the user takes priority.
+     */
+    public get temporaryTag(): IUser["tag"] {
+        for (const socket of this.sockets) {
+            if (socket.gateway.userAgent === BOT_USER_AGENT) {
+                const tag = builtinTags.bot ?? { text: "BOT", color: "#5555ff" };
+                return { text: tag.text, color: tag.color };
+            }
+        }
+    }
+
     public addSocket(socket: Socket) {
+        const tagBefore = JSON.stringify(this.simple().tag);
+
         this.sockets.add(socket);
         socket.participant = this;
+
+        this.sendUpdateIfTagChanged(tagBefore);
     }
 
     public removeSocket(socket: Socket) {
+        const tagBefore = JSON.stringify(this.simple().tag);
+
         this.sockets.delete(socket);
         if (socket.participant === this) socket.participant = undefined;
-        if (this.sockets.size < 1) this.destroy();
+        if (this.sockets.size < 1) return this.destroy();
+
+        this.sendUpdateIfTagChanged(tagBefore);
+    }
+
+    /**
+     * Let the channel know if a socket joining/leaving changed the
+     * temporary tag (e.g. a bot connection attached to this participant)
+     */
+    private sendUpdateIfTagChanged(tagBefore: string) {
+        if (!this.channel || this.destroyed) return;
+        if (JSON.stringify(this.simple().tag) !== tagBefore)
+            this.channel.sendParticipantUpdate(this);
     }
 
     /**
