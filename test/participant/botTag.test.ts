@@ -7,6 +7,20 @@ import { BOT_USER_AGENT } from "~/util/browserChallenge";
 import { createUserIDFromIP } from "~/util/id";
 import { Socket } from "~/ws/Socket";
 import { handleMessage } from "~/ws/message";
+import { usersConfigPath, type UsersConfig } from "~/participant/config";
+import { ConfigManager } from "~/util/config";
+
+/** Run with a different browserChallenge setting (the config proxy is read-only) */
+async function withChallenge(mode: UsersConfig["browserChallenge"], fn: () => unknown) {
+    const real = ConfigManager.getOriginalConfigObject<UsersConfig>(usersConfigPath);
+    const previous = real.browserChallenge;
+    real.browserChallenge = mode;
+    try {
+        await fn();
+    } finally {
+        real.browserChallenge = previous;
+    }
+}
 import { makeSocket, recordSent, tick, uniqueName } from "../helpers";
 
 const BOT_TAG = { text: "BOT", color: "#5555ff" };
@@ -93,7 +107,7 @@ describe("temporary BOT tag", () => {
         expect(stored?.tag ?? null).not.toContain("BOT");
     });
 
-    test("an authorized bot sending hi without a user agent gets the tag", async () => {
+    test("an authorized bot (bot role) sending hi without a user agent gets the tag", async () => {
         const socket = new Socket();
         const sent = recordSent(socket);
         await giveRole(createUserIDFromIP(socket.ip), "bot");
@@ -106,11 +120,77 @@ describe("temporary BOT tag", () => {
         expect(hi?.u?.tag).toEqual(BOT_TAG);
     });
 
-    test("an unauthorized one is still disconnected", async () => {
+    for (const code of ["bot", "broken"]) {
+        test(`a client sending "${code}" is let in as a bot, no role needed`, async () => {
+            const socket = new Socket();
+            const sent = recordSent(socket);
+
+            handleMessage(socket, JSON.stringify([{ m: "hi", code }]));
+            await tick(500);
+
+            expect(socket.isDestroyed()).toBeFalse();
+            expect(socket.gateway.userAgent).toBe(BOT_USER_AGENT);
+            const hi = sent.find(m => m.m === "hi") as { u?: { tag?: unknown } } | undefined;
+            expect(hi?.u?.tag).toEqual(BOT_TAG);
+        });
+    }
+
+    test("a garbage or missing answer is still disconnected", async () => {
+        for (const msg of [{ m: "hi", code: "not base64!!" }, { m: "hi" }]) {
+            const socket = new Socket();
+            handleMessage(socket, JSON.stringify([msg]));
+            await tick(500);
+            expect(socket.isDestroyed()).toBeTrue();
+        }
+    });
+
+    test("a real browser answer gets no BOT tag", async () => {
         const socket = new Socket();
-        handleMessage(socket, JSON.stringify([{ m: "hi", code: "bot" }]));
+        const sent = recordSent(socket);
+        const code = btoa(JSON.stringify([true, "Mozilla/5.0"]));
+
+        handleMessage(socket, JSON.stringify([{ m: "hi", code }]));
         await tick(500);
 
-        expect(socket.isDestroyed()).toBeTrue();
+        expect(socket.isDestroyed()).toBeFalse();
+        const hi = sent.find(m => m.m === "hi") as { u?: { tag?: unknown } } | undefined;
+        expect(hi?.u?.tag).toBeUndefined();
+    });
+});
+
+describe("servers without a browser challenge", () => {
+    test('nobody is marked as a bot, even if they send "bot" or "broken"', async () => {
+        await withChallenge("none", async () => {
+            for (const code of ["bot", "broken", undefined]) {
+                const socket = new Socket();
+                const sent = recordSent(socket);
+
+                handleMessage(socket, JSON.stringify([{ m: "hi", code }]));
+                await tick(500);
+
+                expect(socket.isDestroyed()).toBeFalse();
+                expect(socket.gateway.userAgent).not.toBe(BOT_USER_AGENT);
+                const hi = sent.find(m => m.m === "hi") as { u?: { tag?: unknown } } | undefined;
+                expect(hi?.u?.tag).toBeUndefined();
+            }
+        });
+    });
+
+    test("the challenge isn't even sent", async () => {
+        await withChallenge("none", () => {
+            const sent: { m: string }[] = [];
+            const original = Socket.prototype.sendArray;
+            Socket.prototype.sendArray = function (arr: { m: string }[]) {
+                sent.push(...arr);
+            } as typeof Socket.prototype.sendArray;
+
+            try {
+                new Socket();
+            } finally {
+                Socket.prototype.sendArray = original;
+            }
+
+            expect(sent.some(m => m.m === "b")).toBeFalse();
+        });
     });
 });
