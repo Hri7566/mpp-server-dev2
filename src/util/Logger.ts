@@ -2,6 +2,7 @@ import EventEmitter from "events";
 import { padNum, unimportant } from "./helpers";
 import { join } from "path";
 import { existsSync, mkdirSync, appendFile, writeFile } from "fs";
+import { inspect } from "util";
 
 export const logEvents = new EventEmitter();
 
@@ -22,40 +23,62 @@ export class Logger {
      * @param method The method from `console` to use
      * @param args The data to print
      **/
-    private static log(method: string, logPath: string, ...args: any[]) {
-        // Un-fuck the readline prompt
-        process.stdout.write("\x1b[2K\r");
+    /**
+     * Turn any value into a string without throwing
+     * (client-supplied objects can have a non-function toString)
+     **/
+    private static stringify(arg: unknown) {
+        if (typeof arg === "string") return arg;
 
-        // Log
-        (console as unknown as Record<string, (..._args: any[]) => any>)[
-            method
-        ](
-            unimportant(this.getDate()),
-            unimportant(this.getHHMMSSMS()),
-            ...args
-        );
+        try {
+            return inspect(arg, { depth: 4, breakLength: Infinity });
+        } catch (err) {
+            return "[unprintable]";
+        }
+    }
+
+    private static log(method: string, logPath: string, ...args: any[]) {
+        // Logging must never throw, callers aren't expecting it
+        try {
+            // Un-fuck the readline prompt
+            process.stdout.write("\x1b[2K\r");
+
+            // Log
+            (console as unknown as Record<string, (..._args: any[]) => any>)[
+                method
+            ](
+                unimportant(this.getDate()),
+                unimportant(this.getHHMMSSMS()),
+                ...args
+            );
+        } catch (err) {}
 
         // Re-print the readline prompt (spooky cringe global variable)
-        if ((globalThis as unknown as any).rl)
-            (globalThis as unknown as any).rl.prompt();
+        // prompt() throws if readline was closed (e.g. stdin is /dev/null)
+        try {
+            const rl = (globalThis as unknown as any).rl;
+            if (rl && !rl.closed) rl.prompt();
+        } catch (err) {}
 
         // Emit the log event for remote consoles
-        logEvents.emit(
-            "log",
-            method,
-            unimportant(this.getDate()),
-            unimportant(this.getHHMMSSMS()),
-            args
-        );
+        try {
+            logEvents.emit(
+                "log",
+                method,
+                unimportant(this.getDate()),
+                unimportant(this.getHHMMSSMS()),
+                args
+            );
+        } catch (err) {}
 
         // Write to file
-        (async () => {
+        try {
             const orig =
                 unimportant(this.getDate()) +
                 " " +
                 unimportant(this.getHHMMSSMS()) +
                 " " +
-                args.join(" ") +
+                args.map(arg => Logger.stringify(arg)).join(" ") +
                 "\n";
             const text = orig.replace(logRegex, "");
             if (!existsSync(logPath)) {
@@ -67,7 +90,7 @@ export class Logger {
                     if (err) console.error(err);
                 });
             }
-        })();
+        } catch (err) {}
     }
 
     /**

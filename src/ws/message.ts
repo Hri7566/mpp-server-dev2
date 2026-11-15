@@ -14,9 +14,9 @@ export function handleMessage(socket: Socket, text: string) {
             const _id = socket.participant?.user._id;
 
             logger.warn(
-                "Received message that isn't an array! --",
-                transmission,
-                "-- from",
+                "Received message that isn't an array (",
+                transmission === null ? "null" : typeof transmission,
+                ") from",
                 socket.uuid,
                 `(${_id})`
             );
