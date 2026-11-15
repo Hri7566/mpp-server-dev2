@@ -317,3 +317,70 @@ describe("destroy", () => {
         );
     });
 });
+
+describe("flags", () => {
+    test("rainbowfest cycles its colors", async () => {
+        const ch = new Channel("rainbowfest");
+        const before = ch.getSetting("color");
+
+        await new Promise(r => setTimeout(r, 500));
+
+        expect(ch.getFlag("rainbow")).toBeTrue();
+        expect(ch.getSetting("color")).not.toBe(before);
+        ch.destroy();
+    });
+
+    test("setting the rainbow flag starts it, clearing it stops it", async () => {
+        const ch = new Channel(uniqueName());
+
+        ch.setFlag("rainbow", true);
+        const first = ch.getSetting("color");
+        await new Promise(r => setTimeout(r, 500));
+        expect(ch.getSetting("color")).not.toBe(first);
+
+        ch.setFlag("rainbow", false);
+        const stopped = ch.getSetting("color");
+        await new Promise(r => setTimeout(r, 500));
+        expect(ch.getSetting("color")).toBe(stopped);
+
+        ch.destroy();
+    });
+
+    test("setting the owner_id flag takes effect right away", () => {
+        const ch = new Channel(uniqueName());
+
+        ch.setFlag("owner_id", "flag-owner");
+        expect(ch.getSetting("owner_id")).toBe("flag-owner");
+    });
+
+    test("setting the no_crown flag removes the crown", () => {
+        const ch = new Channel(uniqueName());
+        expect(ch.crown).toBeDefined();
+
+        ch.setFlag("no_crown", true);
+        expect(ch.crown).toBeUndefined();
+    });
+
+    test("setting one flag doesn't undo other settings", () => {
+        const ch = new Channel(uniqueName());
+        ch.changeSettings({ owner_id: "admin-set" }, true);
+        ch.changeSettings({ limit: 7 });
+
+        ch.setFlag("rainbow", true);
+        ch.setFlag("rainbow", false);
+
+        expect(ch.getSetting("owner_id")).toBe("admin-set");
+        expect(ch.getSetting("limit")).toBe(7);
+    });
+
+    test("loading flags keeps the crown's own limit (sendLimit off)", () => {
+        const ch = new Channel(uniqueName());
+        ch.changeSettings({ limit: 7 });
+
+        // What load() does with saved flags
+        ch.setFlags({});
+
+        expect(config.sendLimit).toBeFalse();
+        expect(ch.getSetting("limit")).toBe(7);
+    });
+});

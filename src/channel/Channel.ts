@@ -856,6 +856,9 @@ export class Channel extends EventEmitter {
     ) {
         this.flags[key] = val;
         // this.logger.debug("Updating channel flag " + key + " to", val);
+
+        // Apply just this flag (e.g. start the rainbow), not all of them
+        this.applyFlag(key);
         this.emit("update", this);
     }
 
@@ -886,29 +889,59 @@ export class Channel extends EventEmitter {
         this.updateFlags();
     }
 
+    /** Flags that change how the channel behaves when set */
+    private static appliedFlags = [
+        "owner_id",
+        "rainbow",
+        "limit",
+        "no_crown"
+    ] as const;
+
+    /**
+     * Make a flag's value take effect
+     * @param key Flag that changed
+     */
+    private applyFlag(key: keyof TChannelFlags) {
+        switch (key) {
+            case "owner_id":
+                if (typeof this.flags.owner_id === "string") {
+                    this.settings.owner_id = this.flags.owner_id;
+                } else {
+                    delete this.settings.owner_id;
+                }
+                break;
+
+            case "rainbow":
+                if (this.flags.rainbow) {
+                    this.startRainbow();
+                } else {
+                    this.stopRainbow();
+                }
+                break;
+
+            case "limit":
+                // The flag is enforced either way (see getLimit). sendLimit only
+                // decides whether clients see it. Without sendLimit, leave
+                // settings.limit alone: it's the crown's own limit setting.
+                if (config.sendLimit) {
+                    if (this.flags.limit) {
+                        this.settings.limit = this.flags.limit;
+                    } else {
+                        delete this.settings.limit;
+                    }
+                }
+                break;
+
+            case "no_crown":
+                if (this.flags.no_crown) {
+                    delete this.crown;
+                }
+                break;
+        }
+    }
+
     private updateFlags() {
-        if (typeof this.flags.owner_id === "string") {
-            this.settings.owner_id = this.flags.owner_id;
-        } else {
-            delete this.settings.owner_id;
-        }
-
-        if (this.flags.rainbow) {
-            this.startRainbow();
-        } else {
-            this.stopRainbow();
-        }
-
-        if (this.flags.limit && config.sendLimit) {
-            this.settings.limit = this.flags.limit;
-        } else {
-            delete this.settings.limit;
-        }
-
-        if (this.flags.no_crown) {
-            delete this.crown;
-        }
-
+        for (const key of Channel.appliedFlags) this.applyFlag(key);
         this.update();
     }
 

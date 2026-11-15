@@ -10,6 +10,8 @@ export class NoteQuota {
     public static PARAMS_LOBBY = { allowance: 200, max: 600 };
     public static PARAMS_NORMAL = { allowance: 400, max: 1200 };
     public static PARAMS_RIDICULOUS = { allowance: 600, max: 1800 };
+    /** For the "blackMidi" role: 20k points, refilling at the usual 1/3 of max per tick */
+    public static PARAMS_BLACK_MIDI = { allowance: 6667, max: 20000 };
     public static PARAMS_OFFLINE = {
         allowance: 8000,
         max: 24000,

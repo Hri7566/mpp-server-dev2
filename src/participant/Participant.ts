@@ -9,6 +9,7 @@ import type {
 } from "~/util/types";
 import type { Socket } from "~/ws/Socket";
 import { readUser, createUser } from "~/data/user";
+import { forgetRoles, loadRoles } from "~/data/role";
 import { createID, createUserIDFromIP, createColor } from "~/util/id";
 import { spoop_text } from "~/util/helpers";
 import { config } from "./config";
@@ -101,7 +102,16 @@ export class Participant extends EventEmitter {
         Participant.cache.set(this.id, this);
         bus.on("user data update", this.onUserDataUpdate);
         bus.on("user data change", this.onUserDataChange);
+        bus.on("user roles update", this.onUserRolesUpdate);
     }
+
+    /**
+     * This user's roles changed (e.g. given blackMidi), apply new limits
+     */
+    private onUserRolesUpdate = (_id: string) => {
+        if (_id !== this.user._id) return;
+        for (const s of this.sockets) s.resetRateLimits();
+    };
 
     /**
      * Full user data was loaded/saved (admin edits, tags, flags...)
@@ -213,6 +223,11 @@ export class Participant extends EventEmitter {
             };
         }
 
+        // Roles decide things like the note quota, which is checked often
+        try {
+            await loadRoles(this.user._id);
+        } catch (err) {}
+
         this.loaded = true;
         this.emit("load", this.user);
         return this.user;
@@ -224,8 +239,13 @@ export class Participant extends EventEmitter {
 
         bus.off("user data update", this.onUserDataUpdate);
         bus.off("user data change", this.onUserDataChange);
+        bus.off("user roles update", this.onUserRolesUpdate);
         if (this.channel) this.channel.removeParticipant(this);
         Participant.cache.delete(this.id);
+
+        // Last participant of this user gone, drop their cached roles
+        if (this.user._id && Participant.getByUserID(this.user._id).length === 0)
+            forgetRoles(this.user._id);
         this.removeAllListeners();
     }
 
