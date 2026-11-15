@@ -106,7 +106,8 @@ export class Channel extends EventEmitter {
             const data = await getSavedChannel(this.getID());
             if (data) {
                 try {
-                    this.changeSettings(JSON.parse(data.settings));
+                    if (!this.isLobby())
+                        this.changeSettings(JSON.parse(data.settings), true);
                     this.setFlags(JSON.parse(data.flags));
                     this.loadChatHistory();
 
@@ -177,7 +178,7 @@ export class Channel extends EventEmitter {
                 this.crown = new Crown();
             }
         } else {
-            this.settings = config.lobbySettings;
+            this.settings = { ...config.lobbySettings };
         }
 
         this.bindEventListeners();
@@ -190,7 +191,7 @@ export class Channel extends EventEmitter {
         this.logger.info("Created");
 
         if (this.getID() === "test/mem") {
-            setInterval(() => {
+            this.memInterval = setInterval(() => {
                 this.printMemoryInChat();
             }, 1000);
         }
@@ -201,16 +202,18 @@ export class Channel extends EventEmitter {
     }
 
     private destroyTimeout: Timer | undefined;
+    private memInterval: Timer | undefined;
 
-    private async bindEventListeners() {
-        this.load();
-        this.save();
-        this.logger.info("Loaded chat history");
+    private bindEventListeners() {
+        // Load saved data before saving, otherwise defaults overwrite it
+        this.load().then(() => this.save());
 
         this.on("update", () => this.update());
 
         this.on("command", (msg: SocketMessages["a"], part: Participant) =>
-            this.runCommand(msg, part)
+            this.runCommand(msg, part).catch(err =>
+                this.logger.warn("Error running command:", err)
+            )
         );
 
         this.on("cursor", (pos: CachedCursor) => {
@@ -306,13 +309,7 @@ export class Channel extends EventEmitter {
      * Determine whether this channel is a lobby with the name "lobby" in it
      */
     public isTrueLobby() {
-        const _id = this.getID();
-        return (
-            _id.match("^lobby[0-9][0-9]$") &&
-            _id.match("^lobby[0-9]$") &&
-            _id.match("^lobby$") &&
-            _id.match("^lobbyNaN$")
-        );
+        return /^lobby([0-9]{1,2})?$/.test(this.getID());
     }
 
     /**
@@ -321,7 +318,11 @@ export class Channel extends EventEmitter {
      * @param admin Whether a user is changing the settings (set to true to force the changes)
      * @returns undefined
      */
-    public changeSettings(set: Partial<IChannelSettings>, admin = false) {
+    public changeSettings(
+        set: Partial<IChannelSettings>,
+        admin = false,
+        persist = true
+    ) {
         if (this.isDestroyed()) return;
         if (!admin) {
             if (set.lobby) set.lobby = undefined;
@@ -339,7 +340,7 @@ export class Channel extends EventEmitter {
         if (this.isLobby() && !admin) return;
 
         // Validate settings in set
-        const validatedSet = validateChannelSettings(set);
+        const validatedSet = validateChannelSettings(set, admin);
 
         // Set the verified settings
         for (const key of Object.keys(validatedSet)) {
@@ -364,9 +365,7 @@ export class Channel extends EventEmitter {
         */
 
         //this.logger.debug("Update from changeSettings");
-        (async () => {
-            await this.save();
-        })();
+        if (persist) this.save();
         this.emit("update", this);
     }
 
@@ -495,6 +494,7 @@ export class Channel extends EventEmitter {
         this.destroyed = true;
 
         clearTimeout(this.destroyTimeout);
+        clearInterval(this.memInterval);
         this.stopRainbow();
 
         // Kick everyone out (copied, since moving them mutates these)
@@ -690,20 +690,10 @@ export class Channel extends EventEmitter {
     public isBanned(_id: string) {
         const now = Date.now();
 
-        for (const ban of this.bans) {
-            if (ban.endTime <= now) {
-                // Remove old ban and skip
-                this.bans.splice(this.bans.indexOf(ban), 1);
-                continue;
-            }
+        // Drop expired bans (not while iterating, splicing skips entries)
+        this.bans = this.bans.filter(ban => ban.endTime > now);
 
-            // Check if they are banned
-            if (ban.userId === _id) {
-                return true;
-            }
-        }
-
-        return false;
+        return this.bans.some(ban => ban.userId === _id);
     }
 
     /**
@@ -715,11 +705,7 @@ export class Channel extends EventEmitter {
 
         if (!isBanned) return;
 
-        for (const ban of this.bans) {
-            if (ban.userId === _id) {
-                this.bans.splice(this.bans.indexOf(ban), 1);
-            }
-        }
+        this.bans = this.bans.filter(ban => ban.userId !== _id);
     }
 
     /**
@@ -958,10 +944,14 @@ export class Channel extends EventEmitter {
             this.rainbowHue++;
             while (this.rainbowHue > 360) this.rainbowHue -= 360;
             while (this.rainbowHue < 0) this.rainbowHue += 360;
-            this.changeSettings({
-                color: hsl2hex(this.rainbowHue, 100, 75),
-                color2: hsl2hex(this.rainbowHue, 100, 25)
-            });
+            this.changeSettings(
+                {
+                    color: hsl2hex(this.rainbowHue, 100, 75),
+                    color2: hsl2hex(this.rainbowHue, 100, 25)
+                },
+                true,
+                false
+            );
         }, 1000 / 5);
     }
 

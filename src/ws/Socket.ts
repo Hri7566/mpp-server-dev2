@@ -124,13 +124,38 @@ export class Socket extends EventEmitter {
     private bindEventListeners() {
         for (const group of eventGroups) {
             for (const event of group.eventList) {
+                const callback = Socket.guardHandler(event.id, event.callback);
+
                 if (group.id == "admin") {
-                    this.admin.on(event.id, event.callback);
+                    this.admin.on(event.id, callback);
                 } else {
-                    this.on(event.id, event.callback);
+                    this.on(event.id, callback);
                 }
             }
         }
+    }
+
+    /**
+     * Wrap a message handler so that neither synchronous throws nor
+     * rejected promises escape (an unhandled rejection kills the process)
+     **/
+    private static guardHandler(
+        id: string,
+        callback: (...args: any[]) => unknown
+    ) {
+        return (...args: any[]) => {
+            try {
+                const result = callback(...args);
+
+                if (result instanceof Promise) {
+                    result.catch(err => {
+                        logger.warn(`Error in "${id}" handler:`, err);
+                    });
+                }
+            } catch (err) {
+                logger.warn(`Error in "${id}" handler:`, err);
+            }
+        };
     }
 
     /**

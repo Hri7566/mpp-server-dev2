@@ -4,6 +4,8 @@ export const ch: ServerEventListener<"ch"> = {
     id: "ch",
     callback: async (msg, socket) => {
         // Switch channel
+        // Token auth and the browser challenge happen in "hi"
+        if (!socket.gateway.hasProcessedHi) return;
         if (!socket.rateLimits.normal.ch.attempt()) return;
         if (typeof msg._id !== "string") return;
         if (msg._id.length > 512) return;
