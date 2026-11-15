@@ -6,6 +6,8 @@ class EventBus extends EventEmitter {
 
     constructor() {
         super();
+        // Every participant listens for user data updates
+        this.setMaxListeners(0);
     }
 
     public override emit<K>(eventName: string | symbol, ...args: any[]) {

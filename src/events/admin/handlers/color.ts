@@ -1,4 +1,3 @@
-import { ChannelList } from "~/channel/ChannelList";
 import { readUser, updateUser } from "~/data/user";
 import { bus } from "~/events/bus";
 import { ServerEventListener } from "~/util/types";

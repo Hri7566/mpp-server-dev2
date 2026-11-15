@@ -7,12 +7,10 @@ import type {
     IParticipant,
     IChannelInfo,
     Notification,
-    UserFlags,
-    ITag,
     TChannelFlags
 } from "~/util/types";
 import { validateChannelSettings } from "./settings";
-import { Socket } from "~/ws/Socket";
+import type { Socket } from "~/ws/Socket";
 import Crown from "./Crown";
 import { ChannelList } from "./ChannelList";
 import { config } from "./config";
@@ -22,8 +20,7 @@ import {
     getChatHistory,
     deleteChatHistory
 } from "~/data/history";
-import { mixin, darken, spoop_text, hsl2hex } from "~/util/helpers";
-import type { User } from "@prisma/client";
+import { mixin, darken, hsl2hex } from "~/util/helpers";
 import { heapStats } from "bun:jsc";
 import {
     deleteSavedChannel,
@@ -32,8 +29,7 @@ import {
 } from "../data/channel";
 import { forceloadChannel } from "./forceload";
 import { getRoles } from "~/data/role";
-import { createID } from "~/util/id";
-import { Participant } from "~/participant";
+import type { Participant } from "~/participant";
 
 interface CachedKickban {
     userId: string;
@@ -46,8 +42,6 @@ interface CachedCursor {
     y: string | number;
     id: string;
 }
-
-const BANNED_WORDS = ["AMIGHTYWIND", "CHECKLYHQ"];
 
 /**
  * A channel that hold participants.
@@ -213,7 +207,11 @@ export class Channel extends EventEmitter {
         this.save();
         this.logger.info("Loaded chat history");
 
-        this.on("command", async (msg, socket: Socket) => {});
+        this.on("update", () => this.update());
+
+        this.on("command", (msg: SocketMessages["a"], part: Participant) =>
+            this.runCommand(msg, part)
+        );
 
         this.on("cursor", (pos: CachedCursor) => {
             let found: CachedCursor | undefined;
@@ -248,8 +246,25 @@ export class Channel extends EventEmitter {
         });
     }
 
+    /**
+     * Send everyone in this channel (and the channel list) the latest channel info
+     */
     public update() {
-        // FIXME: channel update
+        if (this.isDestroyed()) return;
+
+        const info = this.getInfo();
+        const ppl = this.getParticipantList();
+
+        for (const part of this.participants.values()) {
+            for (const socket of part.sockets) {
+                socket.sendChannelUpdate(info, ppl);
+
+                // Set their rate limits to match channel status
+                socket.resetRateLimits();
+            }
+        }
+
+        ChannelList.broadcastUpdate(this);
     }
 
     /**
@@ -417,8 +432,6 @@ export class Channel extends EventEmitter {
         arr: SocketEvents[EventID][],
         blockPartID?: string
     ) {
-        const sentSocketIDs = new Array<string>();
-
         for (const part of this.participants.values()) {
             if (part.id === blockPartID) continue;
             part.sendArray(arr);
@@ -432,7 +445,42 @@ export class Channel extends EventEmitter {
      * @returns undefined
      */
     public playNotes(msg: SocketMessages["n"], socket?: Socket) {
-        // TODO: notes
+        if (this.isDestroyed()) return;
+        let pianoPartID = partConfig.adminParticipant.id;
+
+        if (socket) {
+            const part = socket.participant;
+            if (!part || part.channel !== this) return;
+            pianoPartID = part.id;
+
+            const flags = part.user.flags ?? {};
+
+            // Is crownsolo on?
+            if (
+                this.settings.crownsolo &&
+                this.crown &&
+                !(flags.admin || flags.mod) &&
+                part.id !== this.crown.participantId
+            )
+                return;
+
+            if (this.flags.player_colors) {
+                if (this.getSetting("color") !== part.user.color) {
+                    this.changeSettings({ color: part.user.color }, true);
+                }
+            }
+        }
+
+        const clientMsg: SocketEvents["n"] = {
+            m: "n",
+            n: msg.n,
+            t: msg.t,
+            p: pianoPartID
+        };
+
+        for (const part of this.participants.values()) {
+            part.sendArray([clientMsg], socket?.uuid);
+        }
     }
 
     private destroyed = false;
@@ -446,10 +494,12 @@ export class Channel extends EventEmitter {
 
         this.destroyed = true;
 
-        if (this.participants.size > 0) {
-            this.participants.forEach(p =>
-                p.sockets.forEach(s => s.setChannel(config.fullChannel))
-            );
+        clearTimeout(this.destroyTimeout);
+        this.stopRainbow();
+
+        // Kick everyone out (copied, since moving them mutates these)
+        for (const p of [...this.participants.values()]) {
+            for (const s of [...p.sockets]) s.setChannel(config.fullChannel);
         }
 
         ChannelList.remove(this);
@@ -473,6 +523,7 @@ export class Channel extends EventEmitter {
     public scheduleDestroy(ms = config.channelDestroyTimeout) {
         if (ms <= 0) return this.destroy();
 
+        clearTimeout(this.destroyTimeout);
         this.destroyTimeout = setTimeout(() => {
             this.destroy();
         }, ms);
@@ -525,24 +576,9 @@ export class Channel extends EventEmitter {
 
         this.crown.time = Date.now();
 
-        let part: Participant | undefined;
-        if (this.crown.participantId) Participant.get(this.crown.participantId);
-
         const x = Math.random() * 100;
         const y1 = Math.random() * 100;
         const y2 = y1 + Math.random() * (100 - y1);
-
-        if (part) {
-            const cursorPos = part.cursorPos;
-
-            let cursorX = cursorPos.x;
-            if (typeof cursorPos.x === "string")
-                cursorX = Number.parseInt(cursorPos.x);
-
-            let cursorY = cursorPos.y;
-            if (typeof cursorPos.y === "string")
-                cursorY = Number.parseInt(cursorPos.y);
-        }
 
         // Screen positions
         this.crown.startPos = { x, y: y1 };
@@ -569,7 +605,81 @@ export class Channel extends EventEmitter {
     ) {
         const now = Date.now();
         if (t < 0 || t > config.maxBanMinutes * 60 * 1000) return;
-        // TODO: fix kickban
+
+        // They have to be on the server
+        const bannedParts = [...this.participants.values()].filter(
+            p => p.user._id === _id
+        );
+        const bannedPart = bannedParts[0]?.simple();
+        if (!bannedPart) return;
+
+        const existing = this.bans.find(b => b.userId === _id);
+
+        if (existing) {
+            existing.startTime = now;
+            existing.endTime = now + t;
+        } else {
+            this.bans.push({
+                userId: _id,
+                startTime: now,
+                endTime: now + t
+            });
+        }
+
+        const minutes = Math.floor(t / 1000 / 60);
+
+        // Move them to the ban channel
+        for (const part of bannedParts) {
+            for (const socket of [...part.sockets]) {
+                socket.sendNotification({
+                    title: "Notice",
+                    text: `Banned from "${this.getID()}" for ${minutes} minutes.`,
+                    duration: 7000,
+                    target: "#room",
+                    class: "short"
+                });
+
+                socket.setChannel(config.fullChannel);
+            }
+        }
+
+        this.update();
+
+        if (typeof banner === "undefined") return;
+
+        const p = this.getParticipantByUserID(banner)?.simple();
+        if (!p) return;
+
+        await this.sendChatEvent(
+            {
+                m: "a",
+                message: `Banned ${bannedPart.name} from the channel for ${minutes} minutes.`
+            },
+            p
+        );
+
+        this.sendNotification({
+            title: "Notice",
+            text: `${p.name} banned ${bannedPart.name} from the channel for ${minutes} minutes.`,
+            duration: 7000,
+            target: "#room",
+            class: "short"
+        });
+
+        if (banner === _id) {
+            const certificate = {
+                title: "Certificate of Award",
+                text: `Let it be known that ${p.name} kickbanned him/her self.`,
+                duration: 7000,
+                target: "#room"
+            };
+
+            this.sendNotification(certificate);
+
+            for (const part of bannedParts) {
+                part.sendArray([{ m: "notification", ...certificate }]);
+            }
+        }
     }
 
     /**
@@ -651,16 +761,62 @@ export class Channel extends EventEmitter {
      * @param msg Chat message event to send
      * @param p Participant who is "sending the message"
      **/
-    public async sendChatEvent(msg: SocketMessages["a"], p: IParticipant) {}
+    public async sendChatEvent(msg: SocketMessages["a"], p: IParticipant) {
+        if (typeof msg.message !== "string") return;
+        if (msg.message.length > 512) return;
+
+        // Sanitize chat message
+        // Regex originally written by chacha for Brandon's server
+        // Used with permission
+        const message = msg.message
+            .replace(/\p{C}+/gu, "")
+            .replace(/(\p{Mc}{5})\p{Mc}+/gu, "$1")
+            .trim();
+
+        if (!message) return;
+
+        const outgoing: SocketEvents["a"] = {
+            m: "a",
+            a: message,
+            t: Date.now(),
+            p
+        };
+
+        this.sendArray([outgoing]);
+        this.chatHistory.push(outgoing);
+
+        // Limit chat history to 512 messages
+        if (this.chatHistory.length > 512) {
+            this.chatHistory.splice(0, this.chatHistory.length - 512);
+        }
+
+        this.logger.info(`${p._id} ${p.name}: ${message}`);
+
+        try {
+            await saveChatHistory(this.getID(), this.chatHistory);
+        } catch (err) {
+            this.logger.warn("Unable to save chat history:", err);
+        }
+    }
+
+    /**
+     * Send a chat message from a participant in this channel (applies channel rules)
+     * @param msg Chat message from client
+     * @param p Participant who sent it
+     */
+    public async chat(msg: SocketMessages["a"], p: IParticipant) {
+        if (!this.settings.chat) return;
+
+        await this.sendChatEvent(msg, p);
+
+        if (msg.message.startsWith("/")) {
+            const part = this.getParticipant(p.id);
+            if (part) this.emit("command", msg, part);
+        }
+    }
 
     public async sendChat(message: string) {
-        this.sendChatEvent(
-            {
-                m: "a",
-                message
-            },
-            partConfig.adminParticipant
-        );
+        this.sendChatAdmin(message);
     }
 
     /**
@@ -821,23 +977,127 @@ export class Channel extends EventEmitter {
      * @returns List of sanitized participants
      */
     public getParticipantList(showVanished = false) {
-        const ppl = [];
+        const ppl = new Array<ReturnType<Participant["simple"]>>();
 
         for (const p of this.participants.values()) {
             if (!showVanished && p.vanished) continue;
-            p.simple();
+            ppl.push(p.simple());
         }
+
+        return ppl;
     }
 
     public getParticipantListUnsanitized() {
-        return this.participants.values().toArray();
+        return [...this.participants.values()];
     }
 
-    public addParticipant(part: Participant) {}
+    /**
+     * Send the channel info and recent chat to a socket that just joined
+     * @param part Participant the socket belongs to
+     * @param socket Socket that joined
+     */
+    public sendJoinInfo(part: Participant, socket?: Socket) {
+        const msgs: SocketEvents[keyof SocketEvents][] = [
+            {
+                m: "ch",
+                ch: this.getInfo(part.user._id),
+                p: part.id,
+                ppl: this.getParticipantList()
+            },
+            {
+                m: "c",
+                c: this.chatHistory.slice(-50)
+            }
+        ];
 
-    public removeParticipant(part: Participant) {}
+        if (socket) socket.sendArray(msgs);
+        else part.sendArray(msgs);
+    }
 
-    public getParticipant(id: string) {}
+    /**
+     * Broadcast a participant's info (name, color, cursor, etc) to the channel
+     * @param part Participant to broadcast
+     * @param blockPartID Participant ID to skip
+     */
+    public sendParticipantUpdate(part: Participant, blockPartID?: string) {
+        if (part.vanished) return;
+
+        this.sendArray(
+            [
+                {
+                    m: "p",
+                    ...part.simple(),
+                    x: part.cursorPos.x,
+                    y: part.cursorPos.y
+                }
+            ],
+            blockPartID
+        );
+    }
+
+    /**
+     * Add a participant to this channel
+     * @param part Participant joining
+     */
+    public addParticipant(part: Participant) {
+        if (this.isDestroyed()) return;
+
+        clearTimeout(this.destroyTimeout);
+        this.destroyTimeout = undefined;
+
+        part.channel = this;
+        this.participants.set(part.id, part);
+
+        this.sendJoinInfo(part);
+        this.sendParticipantUpdate(part, part.id);
+
+        // Did they have the crown before? If so, give it back
+        if (
+            this.crown &&
+            config.chownOnRejoin &&
+            this.crown.userId === part.user._id &&
+            !this.crown.participantId
+        ) {
+            this.giveCrown(part.simple(), true);
+        } else if (this.settings.owner_id === part.user._id) {
+            this.giveCrown(part.simple(), true);
+        } else {
+            ChannelList.broadcastUpdate(this);
+        }
+    }
+
+    /**
+     * Remove a participant from this channel
+     * @param part Participant leaving
+     */
+    public removeParticipant(part: Participant) {
+        if (!this.participants.has(part.id)) return;
+
+        this.participants.delete(part.id);
+        if (part.channel === this) part.channel = undefined;
+
+        this.cursorCache = this.cursorCache.filter(c => c.id !== part.id);
+
+        if (this.crown && this.crown.participantId === part.id) {
+            // Channel owner left, drop the crown (sends an update)
+            this.dropCrown();
+        } else {
+            this.sendArray([{ m: "bye", p: part.id }]);
+            ChannelList.broadcastUpdate(this);
+        }
+
+        if (this.participants.size === 0 && !this.stays) {
+            this.scheduleDestroy();
+        }
+    }
+
+    /**
+     * Get a participant in this channel by participant ID
+     * @param id Participant ID
+     */
+    public getParticipant(id: string) {
+        return this.participants.get(id);
+    }
 
     /**
      * Determine whether a participant is in this channel
@@ -849,7 +1109,9 @@ export class Channel extends EventEmitter {
     }
 
     public getParticipantByUserID(_id: string) {
-        return this.participants.values().find(p => p.user._id == _id);
+        for (const p of this.participants.values()) {
+            if (p.user._id === _id) return p;
+        }
     }
 
     /**
@@ -858,34 +1120,23 @@ export class Channel extends EventEmitter {
      * @returns Boolean
      */
     public hasUser(_id: string) {
-        const foundPart = this.participants
-            .values()
-            .find(p => p.user._id === _id);
-        return !!foundPart;
+        return !!this.getParticipantByUserID(_id);
     }
 
-    public runCommand() {
+    public async runCommand(msg: SocketMessages["a"], part: Participant) {
         if (!config.enableChatCommands) return;
 
-        /*
         const args = msg.message.split(" ");
         const cmd = args[0].substring(1);
-        const userID = socket.getUserID();
-        const ownsChannel =
-            this.hasUser(userID) &&
-            this.crown &&
-            this.crown.userId == userID;
-        const roles = await getRoles(userID);
+        const roles = await getRoles(part.user._id);
 
         if (cmd === "mem") {
             this.printMemoryInChat();
         } else if (cmd === "roles") {
-            //this.logger.debug(roles);
             this.sendChatAdmin(
                 `Roles: ${roles.map(r => r.roleId).join(", ")}`
             );
         }
-        */
     }
 }
 

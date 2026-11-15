@@ -3,29 +3,37 @@ import { ServerEventListener } from "~/util/types";
 export const m: ServerEventListener<"m"> = {
     id: "m",
     callback: async (msg, socket) => {
-        if (!msg.x || !msg.y) return;
+        // Cursor movement
+        const part = socket.participant;
+        if (!part) return;
+
+        if (!part.user.flags?.["no cursor rate limit"])
+            if (!socket.rateLimits.normal.m.attempt()) return;
+
+        if (typeof msg.x === "undefined" || typeof msg.y === "undefined")
+            return;
 
         let x = msg.x;
         let y = msg.y;
 
         // Parse cursor position if it's strings
-        if (typeof msg.x == "string") {
-            x = parseFloat(msg.x);
+        if (typeof x == "string") {
+            x = parseFloat(x);
         } else {
             socket.gateway.isCursorNotString = true;
         }
 
-        if (typeof msg.y == "string") {
-            y = parseFloat(msg.y);
+        if (typeof y == "string") {
+            y = parseFloat(y);
         } else {
             socket.gateway.isCursorNotString = true;
         }
+
+        if (typeof x !== "number" || typeof y !== "number") return;
+        if (!Number.isFinite(x) || !Number.isFinite(y)) return;
 
         // Relocate the laggy microscopic speck
-        if (socket.participant) {
-            socket.participant.cursorPos.x = msg.x;
-            socket.participant.cursorPos.x = msg.y;
-        }
+        part.setCursorPos(x, y);
         socket.gateway.hasCursorMoved = true;
     }
 };

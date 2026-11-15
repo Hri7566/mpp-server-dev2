@@ -1,9 +1,9 @@
 import type Channel from "./Channel";
-import { Participant } from "~/participant";
+import type { Socket } from "~/ws/Socket";
 
 export class ChannelList {
     private static list = new Array<Channel>();
-    public static subscribers = new Array<string>();
+    public static subscribers = new Set<Socket>();
 
     /**
      * Add a channel to the list
@@ -58,19 +58,35 @@ export class ChannelList {
     }
 
     /**
-     * Add a participant to the list of subscribers to send channel list events to
-     * @param partId Participant ID
+     * Add a socket to the list of subscribers to send channel list events to
+     * @param socket Socket to subscribe
      */
-    public static subscribe(partId: Participant["id"]) {
-        if (partId) this.subscribers.push(partId);
+    public static subscribe(socket: Socket) {
+        this.subscribers.add(socket);
     }
 
     /**
-     * Remove a participant from the list of subscribers, preventing them from receiving channel list events
-     * @param partId Participant ID
+     * Remove a socket from the list of subscribers, preventing it from receiving channel list events
+     * @param socket Socket to unsubscribe
      */
-    public static unsubscribe(partId: Participant["id"]) {
-        if (partId)
-            this.subscribers.splice(this.subscribers.indexOf(partId), 1);
+    public static unsubscribe(socket: Socket) {
+        this.subscribers.delete(socket);
+    }
+
+    /**
+     * Send a channel's updated info to everyone subscribed to the channel list
+     * @param channel Channel that changed
+     */
+    public static broadcastUpdate(channel: Channel) {
+        if (channel.getSetting("visible") !== true) return;
+
+        for (const socket of this.subscribers) {
+            if (socket.isDestroyed()) {
+                this.subscribers.delete(socket);
+                continue;
+            }
+
+            socket.sendChannelList([channel.getInfo(socket.getUserID())], false);
+        }
     }
 }

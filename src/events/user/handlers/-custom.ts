@@ -1,7 +1,7 @@
 import { ServerEventListener } from "~/util/types";
 
-export const minus_custom: ServerEventListener<"-ls"> = {
-    id: "-ls",
+export const minus_custom: ServerEventListener<"-custom"> = {
+    id: "-custom",
     callback: async (msg, socket) => {
         // Unsubscribe from custom messages
         if (socket.rateLimits) {
@@ -9,7 +9,6 @@ export const minus_custom: ServerEventListener<"-ls"> = {
         }
 
         socket.gateway.hasSentCustomUnsub = true;
-
         socket.unsubscribeFromCustom();
     }
 };

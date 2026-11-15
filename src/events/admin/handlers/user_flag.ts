@@ -1,6 +1,5 @@
-import { ChannelList } from "~/channel/ChannelList";
 import { readUser, updateUser } from "~/data/user";
-import { Participant } from "~/participant";
+import { bus } from "~/events/bus";
 import { Logger } from "~/util/Logger";
 import { ServerEventListener } from "~/util/types";
 
@@ -36,21 +35,7 @@ export const user_flag: ServerEventListener<"user_flag"> = {
 
         user.flags = JSON.stringify(flags);
 
-        // Save the user data
-        await updateUser(user.id, user);
-
-        // Update this data for loaded users as well
-        for (const p of Participant.cache.values()) {
-            if (p.user._id !== msg._id) continue;
-
-            if (typeof p.user.flags === "object")
-                (p.user.flags as { [key: string]: unknown })[msg.key] =
-                    msg.value;
-        }
-
-        for (const ch of ChannelList.getList()) {
-            // TODO: review this
-            ch.emit("user data update", user);
-        }
+        // Save the user data, then update loaded participants
+        bus.emit("user data update", await updateUser(user.id, user));
     }
 };

@@ -107,9 +107,11 @@ Command.addCommand(
                         const part = sock.participant;
                         if (part) {
                             let str = `[${sock.uuid}] ${part.id} - ${
-                                part.name
-                            } (${part.color})${
-                                part.tag ? ` ${JSON.stringify(part.tag)} ` : ""
+                                part.user.name
+                            } (${part.user.color})${
+                                part.user.tag
+                                    ? ` ${JSON.stringify(part.user.tag)} `
+                                    : ""
                             }`;
 
                             const ch = part.channel;

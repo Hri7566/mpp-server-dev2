@@ -1,6 +1,5 @@
 import type { Participant } from "~/participant";
 import { IUser, Vector2 } from "~/util/types";
-import { Socket } from "~/ws/Socket";
 
 // shiny hat
 export class Crown {
@@ -35,14 +34,14 @@ export class Crown {
             if (!this.userId) return true;
 
             // if you're the user (you dropped it or left the room, nobody has claimed it)
-            if (this.userId === part._id) return true;
+            if (this.userId === part.user._id) return true;
 
             // if there is no participant and 15 seconds have passed
             if (!this.participantId && this.time + 15000 < Date.now())
                 return true;
 
             // you're the specially designated channel owner
-            if (channel.getSetting("owner_id") === part._id) return true;
+            if (channel.getSetting("owner_id") === part.user._id) return true;
         }
 
         return false;

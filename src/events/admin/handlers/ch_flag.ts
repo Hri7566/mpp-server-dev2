@@ -8,18 +8,12 @@ export const ch_flag: ServerEventListener<"ch_flag"> = {
     id: "ch_flag",
     callback: async (msg, socket) => {
         // Edit channel flag
-        let chid = msg._id;
-
-        if (typeof chid !== "string") {
-            const ch = socket.getCurrentChannel();
-            if (!ch) return;
-
-            chid = ch.getID();
-        }
-
         if (typeof msg.key !== "string") return;
 
-        const ch = ChannelList.getChannel(chid);
+        const ch =
+            typeof msg._id === "string"
+                ? ChannelList.getChannel(msg._id)
+                : socket.getCurrentChannel();
         if (!ch) return;
 
         if (msg.remove === true) {

@@ -13,13 +13,10 @@ export function loadBehaviors() {
         }
     });
 
-    bus.on("ls", () => {});
-
-    /*
     bus.on("custom", (msg: SocketMessages["custom"], sender: Socket) => {
-        if (typeof msg !== "object") return;
+        if (typeof msg !== "object" || msg === null) return;
         if (typeof msg.data === "undefined") return;
-        if (typeof msg.target !== "object") return;
+        if (typeof msg.target !== "object" || msg.target === null) return;
         if (typeof msg.target.mode !== "string") return;
         if (
             typeof msg.target.global !== "undefined" &&
@@ -27,95 +24,65 @@ export function loadBehaviors() {
         )
             return;
 
-        for (const receiver of socketsByUUID.values()) {
-            if (receiver.isDestroyed()) return;
-            if (!receiver.isCustomSubbed()) return;
+        if (sender.isDestroyed() || !sender.isCustomSubbed()) return;
 
-            if (sender.isDestroyed()) return;
-            if (!sender.isCustomSubbed()) return;
+        const senderID = sender.getUserID();
+        if (!senderID) return;
 
-            if (
-                msg.target.global !== true ||
-                typeof msg.target.global === "undefined"
-            ) {
+        const target = msg.target;
+        const out = {
+            m: "custom",
+            data: msg.data,
+            p: senderID
+        } as SocketEvents["custom"];
+
+        for (const receiver of Socket.sockets.values()) {
+            if (receiver.isDestroyed()) continue;
+            if (!receiver.isCustomSubbed()) continue;
+
+            if (target.global !== true) {
                 const ch = sender.getCurrentChannel();
-                if (!ch) return;
-
-                const ch2 = receiver.getCurrentChannel();
-                if (!ch2) return;
-
-                if (ch.getID() !== ch2.getID()) return;
+                if (!ch || receiver.getCurrentChannel() !== ch) continue;
             }
 
-            if (msg.target.mode === "id") {
-                if (typeof msg.target.id !== "string") return;
+            const receiverID = receiver.getUserID();
 
+            if (target.mode === "id") {
+                if (typeof target.id !== "string") return;
                 if (
-                    receiver.getUserID() === msg.target.id ||
-                    receiver.getParticipantID() === msg.target.id
-                ) {
-                    receiver.sendArray([
-                        {
-                            m: "custom",
-                            data: msg.data,
-                            p: sender.getUserID()
-                        } as SocketEvents["custom"]
-                    ]);
-                }
-            } else if (msg.target.mode === "ids") {
-                if (typeof msg.target.ids !== "object") return;
-                if (!Array.isArray(msg.target.ids)) return;
-
-                if (msg.target.ids.includes(receiver.getUserID())) {
-                    receiver.sendArray([
-                        {
-                            m: "custom",
-                            data: msg.data,
-                            p: sender.getUserID()
-                        } as SocketEvents["custom"]
-                    ]);
-                }
-            } else if (msg.target.mode === "subscribed") {
-                receiver.sendArray([
-                    {
-                        m: "custom",
-                        data: msg.data,
-                        p: sender.getUserID()
-                    } as SocketEvents["custom"]
-                ]);
+                    receiverID !== target.id &&
+                    receiver.participant?.id !== target.id
+                )
+                    continue;
+            } else if (target.mode === "ids") {
+                if (!Array.isArray(target.ids)) return;
+                if (!receiverID || !target.ids.includes(receiverID)) continue;
+            } else if (target.mode !== "subscribed") {
+                return;
             }
-        }
-    });
-    */
 
-    bus.on("user data update", user => {
-        for (const ch of ChannelList.getList()) {
-            //logger.debug(`Emitting user update to channel ${ch.getID()}`);
-            ch.emit("user data update", user);
+            receiver.sendArray([out]);
         }
     });
 
-    /*
     bus.on("ban", ban => {
         try {
-            if (ban.banType === "user") {
-                for (const socket of socketsByUUID.values()) {
+            for (const socket of [...Socket.sockets.values()]) {
+                if (ban.banType === "user") {
                     if (socket.getUserID() !== ban._id) continue;
-                    socket.sendBanNotification(ban.duration, ban.reason);
-                    socket.destroy();
+                } else if (ban.banType === "socket") {
+                    if (socket.ip !== ban.ip) continue;
+                } else {
+                    continue;
                 }
-            } else if (ban.banType === "socket") {
-                for (const socket of socketsByUUID.values()) {
-                    if (socket.getIP() !== ban.ip) continue;
-                    socket.sendBanNotification(ban.duration, ban.reason);
-                    socket.destroy();
-                }
+
+                socket.sendBanNotification(ban.duration, ban.reason);
+                socket.destroy();
             }
         } catch (err) {
             logger.warn("Unhandled error in ban event:", err);
         }
     });
-    */
 
     bus.on("ping timeout", () => {
         let now = Date.now();

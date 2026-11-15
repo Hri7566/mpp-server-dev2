@@ -1,5 +1,5 @@
 import { ConfigManager } from "./config";
-import { Tag } from "./types";
+import type { ITag as Tag } from "./types";
 import { User } from "@prisma/client";
 import { readUser, updateUser } from "~/data/user";
 import { ChannelList } from "~/channel/ChannelList";

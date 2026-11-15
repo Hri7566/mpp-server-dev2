@@ -40,10 +40,8 @@ export const notification: ServerEventListener<"notification"> = {
         }
 
         if (typeof msg.targetUser !== "undefined") {
-            for (const socket of Socket.sockets.values()) {
-                if (socket.getUserID() == msg.targetUser) {
-                    socket.sendNotification(msg);
-                }
+            for (const s of Socket.findSocketsByUserID(msg.targetUser)) {
+                s.sendNotification(msg);
             }
         }
     }

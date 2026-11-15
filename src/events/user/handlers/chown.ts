@@ -8,6 +8,7 @@ export const chown: ServerEventListener<"chown"> = {
     id: "chown",
     callback: async (msg, socket) => {
         // Change channel ownership
+        if (!socket.rateLimits.normal.chown.attempt()) return;
         if (!socket.participant) return;
         if (!socket.participant.loaded) return;
 
@@ -21,7 +22,7 @@ export const chown: ServerEventListener<"chown"> = {
 
             // doesn't have permission or chowning flag
             if (
-                //(await socket.hasPermission("chownAnywhere")) ||
+                (await socket.hasPermission("chownAnywhere")) ||
                 flags?.cansetcrowns === 1
             ) {
                 force = true;

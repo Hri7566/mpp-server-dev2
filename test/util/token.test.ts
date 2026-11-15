@@ -10,10 +10,10 @@ import { Socket } from "~/ws/Socket";
 
 test("Token read, write, and delete", async () => {
     const socket = new Socket();
-    const part = socket.assignParticipant();
+    const part = await socket.assignParticipant();
 
     await new Promise((resolve, reject) => {
-        part.once("load", async () => {
+        (async () => {
             const t = (await createToken(
                 part.user._id,
                 socket.gateway,
@@ -48,6 +48,6 @@ test("Token read, write, and delete", async () => {
             expect(list3).not.toContain(t2);
 
             resolve(true);
-        });
+        })().catch(reject);
     });
 });

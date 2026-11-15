@@ -13,10 +13,9 @@ export const plus_ls: ServerEventListener<"+ls"> = {
         // precisely where they went to follow them and to
         // annoy them in chat when I see them again.
 
-        if (!socket.participant) return;
+        if (!socket.rateLimits.normal["+ls"].attempt()) return;
 
         socket.gateway.hasOpenedChannelList = true;
-        // TODO: channel list
-        //socket.participant.subscribeToChannelList();
+        socket.subscribeToChannelList();
     }
 };

@@ -1,4 +1,4 @@
-import { ChannelList } from "~/channel/ChannelList";
+import { bus } from "~/events/bus";
 import { readUser, updateUser } from "~/data/user";
 import { ServerEventListener } from "~/util/types";
 
@@ -16,10 +16,6 @@ export const name: ServerEventListener<"name"> = {
         if (!user) return;
 
         user.name = name;
-        await updateUser(id, user);
-
-        for (const ch of ChannelList.getList()) {
-            ch.emit("user data update", user);
-        }
+        bus.emit("user data update", await updateUser(id, user));
     }
 };

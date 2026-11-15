@@ -20,7 +20,7 @@ export function forceloadChannel(id: string) {
             existing.setForceload(true);
         } else {
             logger.info("Forceloading", id);
-            new Channel(id, undefined, undefined, undefined, true);
+            new Channel(id, undefined, undefined, true);
             return true;
         }
     } catch (err) {
