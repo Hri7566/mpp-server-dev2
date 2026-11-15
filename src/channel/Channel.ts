@@ -395,13 +395,39 @@ export class Channel extends EventEmitter {
             return true;
         }
 
-        // Check user-defined participant limit
-        if (
-            typeof this.settings.limit === "number" &&
-            this.participants.size >= this.settings.limit
-        ) {
+        // Check participant limit
+        const limit = this.getLimit();
+        if (typeof limit === "number" && this.participants.size >= limit) {
             return true;
         }
+
+        return false;
+    }
+
+    /**
+     * Get this channel's participant limit
+     *
+     * The admin "limit" flag takes priority over the crown's "limit" setting.
+     * The flag is enforced even when sendLimit is off (that only controls
+     * whether clients are told about it). 0 or less means no limit.
+     * @returns Limit, or undefined if there isn't one
+     */
+    public getLimit() {
+        for (const limit of [this.flags.limit, this.settings.limit]) {
+            if (typeof limit === "number" && limit > 0) return limit;
+        }
+    }
+
+    /**
+     * Whether a participant may join even though this channel is full
+     * (admins, the designated owner, and whoever holds/held the crown)
+     */
+    public canBypassLimit(part: Participant) {
+        const _id = part.user._id;
+
+        if (part.user.flags?.admin) return true;
+        if (this.settings.owner_id === _id) return true;
+        if (this.crown && this.crown.userId === _id) return true;
 
         return false;
     }

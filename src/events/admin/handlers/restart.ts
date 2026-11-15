@@ -1,5 +1,6 @@
 import { ServerEventListener } from "~/util/types";
 import { Socket } from "~/ws/Socket";
+import { flushAllUsers } from "~/participant/userSaves";
 
 let timeout: Timer | undefined;
 const timeoutTime = 20000;
@@ -22,8 +23,9 @@ export const restart: ServerEventListener<"restart"> = {
             });
         }
 
-        timeout = setTimeout(() => {
-            // Stop the program
+        timeout = setTimeout(async () => {
+            // Save unsaved name/color changes, then stop the program
+            await flushAllUsers().catch(() => {});
             process.exit();
         }, timeoutTime);
     }

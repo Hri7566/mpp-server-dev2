@@ -8,13 +8,18 @@ import type {
     Vector2
 } from "~/util/types";
 import type { Socket } from "~/ws/Socket";
-import { readUser, createUser, updateUser } from "~/data/user";
+import { readUser, createUser } from "~/data/user";
 import { createID, createUserIDFromIP, createColor } from "~/util/id";
 import { spoop_text } from "~/util/helpers";
 import { config } from "./config";
 import type { Channel } from "~/channel";
 import type { User } from "@prisma/client";
 import { bus } from "~/events/bus";
+import {
+    applyPendingUserChange,
+    queueUserChange,
+    type PendingUserChange
+} from "./userSaves";
 
 export type IUserWithFlags = IUser & { flags?: UserFlags };
 
@@ -88,21 +93,45 @@ export class Participant extends EventEmitter {
         if (socket) this.addSocket(socket);
 
         if (user) {
-            this.user = { ...user };
+            this.user = applyPendingUserChange(user._id, { ...user });
             this.loaded = true;
             this.loadPromise = Promise.resolve(this.user);
         }
 
         Participant.cache.set(this.id, this);
         bus.on("user data update", this.onUserDataUpdate);
+        bus.on("user data change", this.onUserDataChange);
     }
 
+    /**
+     * Full user data was loaded/saved (admin edits, tags, flags...)
+     */
     private onUserDataUpdate = (user: User | null) => {
         if (!user || user.id !== this.user._id) return;
-        this.user = Participant.convertUser(user);
+
+        // The database copy may not have the latest name/color yet
+        this.user = applyPendingUserChange(
+            user.id,
+            Participant.convertUser(user)
+        );
+
         this.loaded = true;
         if (this.channel) this.channel.sendParticipantUpdate(this);
         for (const s of this.sockets) s.resetRateLimits();
+    };
+
+    /**
+     * A user changed their name/color (not saved to the database yet)
+     */
+    private onUserDataChange = (
+        change: PendingUserChange & { _id: string }
+    ) => {
+        if (!change || change._id !== this.user._id) return;
+
+        if (typeof change.name === "string") this.user.name = change.name;
+        if (typeof change.color === "string") this.user.color = change.color;
+
+        if (this.channel) this.channel.sendParticipantUpdate(this);
     };
 
     /**
@@ -170,7 +199,11 @@ export class Participant extends EventEmitter {
         }
 
         if (user) {
-            this.user = Participant.convertUser(user);
+            // Unsaved name/color changes from another tab win
+            this.user = applyPendingUserChange(
+                _id,
+                Participant.convertUser(user)
+            );
         } else {
             this.user = {
                 _id,
@@ -190,6 +223,7 @@ export class Participant extends EventEmitter {
         this.destroyed = true;
 
         bus.off("user data update", this.onUserDataUpdate);
+        bus.off("user data change", this.onUserDataChange);
         if (this.channel) this.channel.removeParticipant(this);
         Participant.cache.delete(this.id);
         this.removeAllListeners();
@@ -265,13 +299,19 @@ export class Participant extends EventEmitter {
         if (typeof color === "string" && (config.enableColorChanging || force))
             isColor = !!color.match(/^#[0-9a-f]{6}$/i);
 
-        const user = await updateUser(this.user._id, {
-            name,
-            color: isColor ? color : undefined
-        });
+        const change: PendingUserChange = {};
+        if (typeof name === "string" && name !== this.user.name)
+            change.name = name;
+        if (isColor && color !== this.user.color) change.color = color;
 
-        // Propagates to every participant with this user ID
-        bus.emit("user data update", user);
+        if (Object.keys(change).length === 0) return;
+
+        // Saved to the database later (socket close / periodic sweep),
+        // since people spam-change their names
+        queueUserChange(this.user._id, change);
+
+        // Propagates to every participant with this user ID right away
+        bus.emit("user data change", { _id: this.user._id, ...change });
     }
 }
 
